@@ -8,10 +8,24 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => !!token.value)
 
+  const LOCAL_USERS = [
+    { username: 'admin', password: 'admin123', role: 'admin', user: { name: '管理员', id: 1 } },
+    { username: 'doctor', password: 'doc123', role: 'doctor', user: { name: '医生张', id: 2 } },
+    { username: 'nurse', password: 'nurse123', role: 'nurse', user: { name: '护士李', id: 3 } },
+    { username: 'pharmacist', password: 'pharm123', role: 'pharmacist', user: { name: '药剂师赵', id: 4 } },
+  ]
+
   function login(payload) {
     token.value = payload.token
     role.value = payload.role || null
     user.value = payload.user || null
+  }
+
+  function loginWithPassword({ username, password }) {
+    const found = LOCAL_USERS.find(u => u.username === username && u.password === password)
+    if (!found) throw new Error('用户名或密码错误')
+    login({ token: `dev-${found.username}-token`, role: found.role, user: found.user })
+    return true
   }
 
   function logout() {
@@ -30,5 +44,5 @@ export const useAuthStore = defineStore('auth', () => {
     else localStorage.removeItem('omms_role')
   })
 
-  return { token, role, user, isAuthenticated, login, logout }
+  return { token, role, user, isAuthenticated, login, loginWithPassword, logout }
 })

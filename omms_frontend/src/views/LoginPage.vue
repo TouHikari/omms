@@ -3,6 +3,7 @@
     <a-card class="login-card" :bordered="false">
       <div class="title">在线医疗管理系统</div>
       <div class="subtitle">账号登录</div>
+      <a-alert v-if="errorMsg" type="error" :message="errorMsg" show-icon style="margin-bottom: 12px;" />
 
       <a-form layout="vertical" :model="form" :rules="rules" @finish="onFinish">
         <a-form-item name="username" label="用户名">
@@ -42,6 +43,7 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons-vue'
 
 const form = ref({ username: '', password: '', remember: true })
 const loading = ref(false)
+const errorMsg = ref('')
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
@@ -54,11 +56,17 @@ const rules = {
 const onFinish = async () => {
   loading.value = true
   setTimeout(() => {
-    auth.login({ token: 'mvp-token', role: 'admin' })
-    loading.value = false
-    const redirect = route.query.redirect?.toString() || '/'
-    router.replace(redirect)
-  }, 600)
+    try {
+      auth.loginWithPassword({ username: form.value.username, password: form.value.password })
+      errorMsg.value = ''
+      const redirect = route.query.redirect?.toString() || '/'
+      router.replace(redirect)
+    } catch (e) {
+      errorMsg.value = e.message || '登录失败'
+    } finally {
+      loading.value = false
+    }
+  }, 300)
 }
 </script>
 
