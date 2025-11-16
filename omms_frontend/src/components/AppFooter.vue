@@ -6,10 +6,15 @@
 </template>
 
 <style lang="scss" scoped>
+@use '@/assets/_variables.scss' as *;
+
 .footer-container {
-  padding: 24px 12px;
   background-color: #001529;
   text-align: center;
   color: white;
+  font-size: 14px;
+  height: $footer-height-secondary;
+  box-sizing: border-box;
+  border-top: 1px solid $border-color;
 }
 </style>

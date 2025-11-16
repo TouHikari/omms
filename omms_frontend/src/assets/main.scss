@@ -1,5 +1,46 @@
+@forward 'variables';
 @use 'variables' as *;
+
+html {
+  //overflow-y: scroll;
+  scroll-behavior: smooth;
+}
 
 body {
   font-family: 'Noto Sans SC', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+::selection {
+  color: #007DFF;
+  filter: invert(100%);
+  background-color: #00000020;
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+  transition: all 0.2s ease;
+}
+
+::-webkit-scrollbar-track {
+  background: #262639;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+// Ant Design
+ant-dropdown-menu-title-content {
+  white-space: nowrap;
 }
