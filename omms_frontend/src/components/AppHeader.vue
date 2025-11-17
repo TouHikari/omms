@@ -8,6 +8,7 @@
     </div>
 
     <a-menu mode="horizontal" v-model:selectedKeys="selectedMenuKeys" :style="{ flex: 1, minWidth: '480px' }">
+      <a-menu-item key="dashboard">数据看板</a-menu-item>
       <a-menu-item key="appointments">预约管理</a-menu-item>
       <a-menu-item key="records">病历管理</a-menu-item>
       <a-menu-item key="pharmacy">药品与库存</a-menu-item>

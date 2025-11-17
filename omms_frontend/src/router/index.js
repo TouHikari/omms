@@ -1,7 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomePage from '@/views/HomePage.vue'
+import DashBoardPage from '@/views/DashBoardPage.vue'
 import LoginPage from '@/views/LoginPage.vue'
+import NotFoundPage from '@/views/404Page.vue'
 import { useAuthStore } from '@/stores/auth'
+import SimpleLayout from '@/layouts/SimpleLayout.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -11,9 +13,9 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: HomePage,
-      meta: { requiresAuth: true, title: '首页' },
+      name: 'dashboard',
+      component: DashBoardPage,
+      meta: { requiresAuth: true, title: '数据看板' },
     },
     {
       path: '/login',
@@ -24,7 +26,8 @@ const router = createRouter({
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
-      redirect: '/',
+      component: NotFoundPage,
+      meta: { layout: SimpleLayout, title: '404' },
     },
   ],
 })

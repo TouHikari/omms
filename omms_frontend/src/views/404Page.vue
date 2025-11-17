@@ -1,0 +1,35 @@
+<template>
+  <div class="not-found-container">
+    <h2 class="not-found-title">404</h2>
+    <a-divider>Not Found</a-divider>
+    <p class="not-found-message">Oops! 很抱歉，页面不存在</p>
+  </div>
+</template>
+
+<style scoped lang="scss">
+@use '@/assets/_variables.scss' as *;
+
+.not-found-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: calc(100vh - $header-height-prime - $footer-height-secondary);
+}
+
+.not-found-title {
+  font-size: 128px;
+  font-weight: bold;
+  font-family: 'JetBrains Mono', sans-serif;
+  margin: 0;
+  background: linear-gradient(120deg, #ff7a45 0%, #ff4d4f 50%, #cf1322 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.not-found-message {
+  font-size: 18px;
+}
+</style>

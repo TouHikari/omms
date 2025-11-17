@@ -1,7 +1,14 @@
 <template>
   <a-layout-sider width="100%" height="100%" style="background: #fff" id="sidebar">
-    <a-menu v-model:selectedKeys="selectedKeys" v-model:openKeys="openKeys" mode="inline"
-      :style="{ height: '100%', borderRight: 0 }">
+    <a-menu
+      v-model:selectedKeys="state.selectedKeys"
+      style="width: 256px"
+      mode="inline"
+      :open-keys="state.openKeys"
+      :items="items"
+      :style="{ height: '100%', borderRight: 0 }"
+      @openChange="onOpenChange"
+      >
       <a-sub-menu key="sub1">
         <template #title>
           <span>
@@ -44,11 +51,49 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { h ,reactive } from 'vue'
 import { UserOutlined, LaptopOutlined, NotificationOutlined } from '@ant-design/icons-vue'
 
-const selectedKeys = ref(['1'])
-const openKeys = ref(['sub1'])
+function getItem(label, key, icon, children, type) {
+  return {
+    key,
+    icon,
+    children,
+    label,
+    type,
+  };
+}
+const items = reactive([
+  getItem('Navigation One', 'sub1', () => h(UserOutlined), [
+    getItem('Option 1', '1'),
+    getItem('Option 2', '2'),
+    getItem('Option 3', '3'),
+    getItem('Option 4', '4'),
+  ]),
+  getItem('Navigation Two', 'sub2', () => h(LaptopOutlined), [
+    getItem('Option 5', '5'),
+    getItem('Option 6', '6'),
+  ]),
+  getItem('Navigation Three', 'sub4', () => h(NotificationOutlined), [
+    getItem('Option 9', '9'),
+    getItem('Option 10', '10'),
+    getItem('Option 11', '11'),
+    getItem('Option 12', '12'),
+  ]),
+]);
+const state = reactive({
+  rootSubmenuKeys: ['sub1', 'sub2', 'sub4'],
+  openKeys: ['sub1'],
+  selectedKeys: [],
+});
+const onOpenChange = openKeys => {
+  const latestOpenKey = openKeys.find(key => state.openKeys.indexOf(key) === -1);
+  if (state.rootSubmenuKeys.indexOf(latestOpenKey) === -1) {
+    state.openKeys = openKeys;
+  } else {
+    state.openKeys = latestOpenKey ? [latestOpenKey] : [];
+  }
+};
 </script>
 
 <style scoped lang="scss">

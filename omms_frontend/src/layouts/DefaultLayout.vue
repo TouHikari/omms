@@ -30,5 +30,7 @@
 
 .content-container {
   padding: 24px;
+  width: 100%;
+  background-color: $content-bg-color;
 }
 </style>

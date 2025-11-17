@@ -6,18 +6,28 @@ import AppFooter from '@/components/AppFooter.vue';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 
 const route = useRoute();
-const isBlankLayout = computed(() => route.meta?.layout === 'blank');
+const layoutMap = { default: DefaultLayout, blank: 'div' };
+const rawLayout = computed(() => route.meta?.layout);
+const CurrentLayout = computed(() => {
+  const l = rawLayout.value;
+  if (!l) return layoutMap.default;
+  if (typeof l === 'string') return layoutMap[l] || layoutMap.default;
+  return l;
+});
+const isBlankLayout = computed(() => rawLayout.value === 'blank');
 </script>
 
 <template>
   <div v-if="!isBlankLayout" class="app-container">
     <AppHeader />
-    <DefaultLayout>
+    <component :is="CurrentLayout">
       <RouterView />
-    </DefaultLayout>
+    </component>
     <AppFooter />
   </div>
-  <RouterView v-else />
+  <component v-else :is="CurrentLayout">
+    <RouterView />
+  </component>
 </template>
 
 <style lang="scss">
