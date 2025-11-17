@@ -81,4 +81,8 @@ watch(() => route.query.menu, (menu) => {
   border-right: 1px solid $border-color;
   background-color: rgba(0, 0, 0, 0.02);
 }
+
+:deep(.ant-menu) {
+  width: 100% !important;
+}
 </style>

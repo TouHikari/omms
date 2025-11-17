@@ -45,6 +45,27 @@ body {
 .app-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  padding-top: $header-height-prime;
+  padding-bottom: $footer-height-secondary;
+  box-sizing: border-box;
+}
+
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: $header-height-prime;
+  z-index: 1000;
+}
+
+.footer-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: $footer-height-secondary;
+  z-index: 1000;
 }
 </style>

@@ -14,7 +14,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: calc(100vh - $header-height-prime - $footer-height-secondary);
+  height: 100%;
 }
 
 .not-found-title {

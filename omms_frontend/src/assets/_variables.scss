@@ -5,10 +5,10 @@ $header-height-secondary: 48px;
 $header-height-secondary-large: 56px;
 
 // AppFooter 高度
-$footer-height-prime: 96px;
-$footer-height-prime-large: 144px;
-$footer-height-secondary: 72px;
-$footer-height-secondary-large: 96px;
+$footer-height-prime: 72px;
+$footer-height-prime-large: 108px;
+$footer-height-secondary: 64px;
+$footer-height-secondary-large: 72px;
 
 // Siderbar 宽度
 $sidebar-width: 300px;
@@ -55,3 +55,10 @@ $flat-success-text: #2f5d34;
 $flat-danger-bg: #ffeded;
 $flat-danger-border: #eac0c0;
 $flat-danger-text: #6a2a2a;
+
+$scrollbar-width: 12px;
+$scrollbar-track-bg-light: #f0f2f5;
+$scrollbar-thumb-bg-light: rgba(0, 0, 0, 0.18);
+$scrollbar-thumb-border-color-light: rgba(0, 0, 0, 0.08);
+$scrollbar-thumb-hover-bg-light: rgba(0, 0, 0, 0.28);
+$scrollbar-thumb-active-bg-light: rgba(0, 0, 0, 0.35);

@@ -15,13 +15,14 @@
 .layout-container {
   display: flex;
   flex-direction: row;
-  min-height: calc(100vh - $header-height-prime - $footer-height-secondary);
-  max-height: calc(100vh - $header-height-prime - $footer-height-secondary);
+  justify-content: center;
+  height: calc(100vh - $header-height-prime - $footer-height-secondary);
 }
 
 .content-container {
   padding: 24px;
   width: 100%;
   background-color: $content-bg-color;
+  overflow-y: scroll;
 }
 </style>
