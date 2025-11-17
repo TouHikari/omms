@@ -12,7 +12,7 @@ export const useAuthStore = defineStore('auth', () => {
     { username: 'admin', password: 'admin123', role: 'admin', user: { name: '管理员', id: 1 } },
     { username: 'doctor', password: 'doc123', role: 'doctor', user: { name: '医生张', id: 2 } },
     { username: 'nurse', password: 'nurse123', role: 'nurse', user: { name: '护士李', id: 3 } },
-    { username: 'pharmacist', password: 'pharm123', role: 'pharmacist', user: { name: '药剂师赵', id: 4 } },
+    { username: 'patient', password: 'patient123', role: 'patient', user: { name: '患者王', id: 4 } },
   ]
 
   function login(payload) {

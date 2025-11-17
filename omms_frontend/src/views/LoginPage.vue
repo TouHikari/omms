@@ -111,7 +111,7 @@ const onFinish = async () => {
 .bg-mask {
   position: fixed;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.7) 100%);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%);
   z-index: 1;
   pointer-events: none;
 }
@@ -130,7 +130,7 @@ const onFinish = async () => {
 }
 
 .intro-title {
-  font-size: 28px;
+  font-size: 50px;
   font-weight: 700;
   margin: 0 0 12px 0;
   background: linear-gradient(90deg, #1677ff 0%, #69b1ff 100%);
@@ -205,5 +205,9 @@ const onFinish = async () => {
   margin: 0 24px;
   position: relative;
   z-index: 2;
+}
+
+:deep(.ant-checkbox-wrapper) {
+  color: rgba(255, 255, 255, 0.9);
 }
 </style>

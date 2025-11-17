@@ -8,51 +8,15 @@
       :items="items"
       :style="{ height: '100%', borderRight: 0 }"
       @openChange="onOpenChange"
-      >
-      <a-sub-menu key="sub1">
-        <template #title>
-          <span>
-            <UserOutlined />
-            subnav 1
-          </span>
-        </template>
-        <a-menu-item key="1">option1</a-menu-item>
-        <a-menu-item key="2">option2</a-menu-item>
-        <a-menu-item key="3">option3</a-menu-item>
-        <a-menu-item key="4">option4</a-menu-item>
-      </a-sub-menu>
-      <a-sub-menu key="sub2">
-        <template #title>
-          <span>
-            <LaptopOutlined />
-            subnav 2
-          </span>
-        </template>
-        <a-menu-item key="5">option5</a-menu-item>
-        <a-menu-item key="6">option6</a-menu-item>
-        <a-menu-item key="7">option7</a-menu-item>
-        <a-menu-item key="8">option8</a-menu-item>
-      </a-sub-menu>
-      <a-sub-menu key="sub3">
-        <template #title>
-          <span>
-            <NotificationOutlined />
-            subnav 3
-          </span>
-        </template>
-        <a-menu-item key="9">option9</a-menu-item>
-        <a-menu-item key="10">option10</a-menu-item>
-        <a-menu-item key="11">option11</a-menu-item>
-        <a-menu-item key="12">option12</a-menu-item>
-      </a-sub-menu>
+      @select="onSelect"
+    >
     </a-menu>
   </a-layout-sider>
-
 </template>
 
 <script setup>
-import { h ,reactive } from 'vue'
-import { UserOutlined, LaptopOutlined, NotificationOutlined } from '@ant-design/icons-vue'
+import { reactive, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 function getItem(label, key, icon, children, type) {
   return {
@@ -63,37 +27,51 @@ function getItem(label, key, icon, children, type) {
     type,
   };
 }
-const items = reactive([
-  getItem('Navigation One', 'sub1', () => h(UserOutlined), [
-    getItem('Option 1', '1'),
-    getItem('Option 2', '2'),
-    getItem('Option 3', '3'),
-    getItem('Option 4', '4'),
-  ]),
-  getItem('Navigation Two', 'sub2', () => h(LaptopOutlined), [
-    getItem('Option 5', '5'),
-    getItem('Option 6', '6'),
-  ]),
-  getItem('Navigation Three', 'sub4', () => h(NotificationOutlined), [
-    getItem('Option 9', '9'),
-    getItem('Option 10', '10'),
-    getItem('Option 11', '11'),
-    getItem('Option 12', '12'),
-  ]),
-]);
+const route = useRoute()
+const router = useRouter()
+
 const state = reactive({
-  rootSubmenuKeys: ['sub1', 'sub2', 'sub4'],
-  openKeys: ['sub1'],
+  rootSubmenuKeys: [],
+  openKeys: [],
   selectedKeys: [],
-});
-const onOpenChange = openKeys => {
-  const latestOpenKey = openKeys.find(key => state.openKeys.indexOf(key) === -1);
-  if (state.rootSubmenuKeys.indexOf(latestOpenKey) === -1) {
-    state.openKeys = openKeys;
-  } else {
-    state.openKeys = latestOpenKey ? [latestOpenKey] : [];
+})
+
+const items = computed(() => {
+  const sidebar = route.meta?.sidebar || []
+  const groups = sidebar.map(g => getItem(g.label, g.key, undefined, (g.children || []).map(c => getItem(c.label, c.key))))
+  return groups
+})
+
+const rootSubmenuKeys = computed(() => items.value.map(g => g.key))
+
+watch(rootSubmenuKeys, (keys) => {
+  state.rootSubmenuKeys = keys
+  if (!state.openKeys.length) {
+    state.openKeys = keys.length ? [keys[0]] : []
   }
-};
+}, { immediate: true })
+
+watch(() => route.path, () => {
+  const first = rootSubmenuKeys.value[0]
+  state.openKeys = first ? [first] : []
+})
+
+const onOpenChange = openKeys => {
+  const latestOpenKey = openKeys.find(key => state.openKeys.indexOf(key) === -1)
+  if (state.rootSubmenuKeys.indexOf(latestOpenKey) === -1) {
+    state.openKeys = openKeys
+  } else {
+    state.openKeys = latestOpenKey ? [latestOpenKey] : []
+  }
+}
+
+function onSelect({ key }) {
+  router.replace({ path: route.path, query: { ...route.query, menu: key } })
+}
+
+watch(() => route.query.menu, (menu) => {
+  state.selectedKeys = menu ? [menu.toString()] : []
+}, { immediate: true })
 </script>
 
 <style scoped lang="scss">

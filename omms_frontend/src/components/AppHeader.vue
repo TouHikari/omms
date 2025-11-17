@@ -139,5 +139,7 @@ watch(() => route.path, syncSelected, { immediate: true })
   display: flex;
   align-items: center;
   gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
 }
 </style>
