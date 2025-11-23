@@ -1,6 +1,5 @@
 <script setup>
-import { computed } from 'vue'
-import { message } from 'ant-design-vue'
+import { ref, computed, watch } from 'vue'
 
 const props = defineProps({
   currentMenu: { type: String, required: true },
@@ -8,6 +7,7 @@ const props = defineProps({
   doctors: { type: Array, required: true },
   appointments: { type: Array, required: true },
   setMenu: { type: Function, required: true },
+  updateStatus: { type: Function, required: true },
 })
 
 const columns = [
@@ -20,24 +20,57 @@ const columns = [
   { title: '操作', key: 'action' },
 ]
 
+const statusFilter = ref('all')
+
+watch(() => props.currentMenu, (m) => {
+  if (m === 'list_pending') statusFilter.value = 'pending'
+  else if (m === 'list_completed') statusFilter.value = 'completed'
+  else if (m === 'list_cancelled') statusFilter.value = 'cancelled'
+  else statusFilter.value = 'all'
+}, { immediate: true })
+
 const filteredAppointments = computed(() => {
-  const m = props.currentMenu
-  if (m === 'list_pending') return props.appointments.filter(a => a.status === 'pending')
-  if (m === 'list_completed') return props.appointments.filter(a => a.status === 'completed')
-  if (m === 'list_cancelled') return props.appointments.filter(a => a.status === 'cancelled')
+  const s = statusFilter.value
+  if (s === 'pending') return props.appointments.filter(a => a.status === 'pending')
+  if (s === 'completed') return props.appointments.filter(a => a.status === 'completed')
+  if (s === 'cancelled') return props.appointments.filter(a => a.status === 'cancelled')
   return props.appointments
 })
+
+const detailVisible = ref(false)
+const detailRecord = ref(null)
+
+const patientsByName = {
+  '王小明': { patient_id: 1001, user_id: 5001, name: '王小明', gender: 1, birthday: '1990-04-12', id_card: '110101199004120011', address: '北京市朝阳区和平里', emergency_contact: '王女士', emergency_phone: '13800000001' },
+  '李小红': { patient_id: 1002, user_id: 5002, name: '李小红', gender: 0, birthday: '1992-08-22', id_card: '110101199208220022', address: '北京市海淀区西北旺', emergency_contact: '李先生', emergency_phone: '13800000002' },
+  '赵大海': { patient_id: 1003, user_id: 5003, name: '赵大海', gender: 1, birthday: '1985-01-10', id_card: '110101198501100033', address: '北京市丰台区丽泽', emergency_contact: '赵女士', emergency_phone: '13800000003' },
+  '孙一': { patient_id: 1004, user_id: 5004, name: '孙一', gender: 1, birthday: '1995-05-05', id_card: '110101199505050044', address: '北京市通州区梨园', emergency_contact: '孙先生', emergency_phone: '13800000004' },
+  '周二': { patient_id: 1005, user_id: 5005, name: '周二', gender: 0, birthday: '1998-12-12', id_card: '110101199812120055', address: '北京市石景山区古城', emergency_contact: '周女士', emergency_phone: '13800000005' },
+  '吴三': { patient_id: 1006, user_id: 5006, name: '吴三', gender: 1, birthday: '1991-03-18', id_card: '110101199103180066', address: '北京市昌平区北七家', emergency_contact: '吴先生', emergency_phone: '13800000006' },
+}
+
+const currentPatient = computed(() => {
+  const r = detailRecord.value
+  if (!r) return null
+  const p = patientsByName[r.patient]
+  return p ? p : { patient_id: '-', user_id: '-', name: r.patient, gender: '-', birthday: '-', id_card: '-', address: '-', emergency_contact: '-', emergency_phone: '-' }
+})
+
+function showDetail(record) {
+  detailRecord.value = record
+  detailVisible.value = true
+}
 </script>
 
 <template>
   <a-card title="预约列表">
-    <a-space style="margin-bottom: 12px">
-      <a-select v-if="currentMenu === 'list_by_department'" style="width: 200px" placeholder="选择科室">
-        <a-select-option v-for="d in departments" :key="d" :value="d">{{ d }}</a-select-option>
-      </a-select>
-      <a-select v-if="currentMenu === 'list_by_doctor'" style="width: 200px" placeholder="选择医生">
-        <a-select-option v-for="d in doctors" :key="d" :value="d">{{ d }}</a-select-option>
-      </a-select>
+    <a-space style="margin-bottom: 12px; width: 100%; justify-content: space-between">
+      <a-radio-group v-model:value="statusFilter" button-style="solid">
+        <a-radio-button value="all">全部</a-radio-button>
+        <a-radio-button value="pending">待就诊</a-radio-button>
+        <a-radio-button value="completed">已完成</a-radio-button>
+        <a-radio-button value="cancelled">已取消</a-radio-button>
+      </a-radio-group>
       <a-button type="primary" @click="setMenu('create')">新建预约</a-button>
     </a-space>
     <a-table :columns="columns" :data-source="filteredAppointments" :pagination="{ pageSize: 5 }" rowKey="id">
@@ -49,13 +82,52 @@ const filteredAppointments = computed(() => {
         </template>
         <template v-else-if="column.key === 'action'">
           <a-space>
-            <a-button type="link" @click="message.info(`查看 ${record.id}`)">详情</a-button>
+            <a-button type="link" @click="showDetail(record)">详情</a-button>
+            <a-dropdown>
+              <a-button type="link">更改状态</a-button>
+              <template #overlay>
+                <a-menu>
+                  <a-menu-item key="pending" @click="props.updateStatus(record.id, 'pending')">置为待就诊</a-menu-item>
+                  <a-menu-item key="completed" @click="props.updateStatus(record.id, 'completed')">置为已完成</a-menu-item>
+                  <a-menu-item key="cancelled">
+                    <a-popconfirm title="确认取消该预约？" ok-text="确认" cancel-text="取消" @confirm="props.updateStatus(record.id, 'cancelled')">
+                      <span>置为已取消</span>
+                    </a-popconfirm>
+                  </a-menu-item>
+                </a-menu>
+              </template>
+            </a-dropdown>
           </a-space>
         </template>
       </template>
     </a-table>
   </a-card>
+
+  <a-modal v-model:open="detailVisible" title="患者详情" :footer="null" width="720px">
+    <a-descriptions :column="2" bordered size="small">
+      <a-descriptions-item label="患者ID">{{ currentPatient?.patient_id }}</a-descriptions-item>
+      <a-descriptions-item label="用户ID">{{ currentPatient?.user_id }}</a-descriptions-item>
+      <a-descriptions-item label="姓名">{{ currentPatient?.name }}</a-descriptions-item>
+      <a-descriptions-item label="性别">{{ currentPatient?.gender === 1 ? '男' : currentPatient?.gender === 0 ? '女' : '-'
+        }}</a-descriptions-item>
+      <a-descriptions-item label="出生日期">{{ currentPatient?.birthday }}</a-descriptions-item>
+      <a-descriptions-item label="身份证号">{{ currentPatient?.id_card }}</a-descriptions-item>
+      <a-descriptions-item label="地址" :span="2">{{ currentPatient?.address }}</a-descriptions-item>
+      <a-descriptions-item label="紧急联系人">{{ currentPatient?.emergency_contact }}</a-descriptions-item>
+      <a-descriptions-item label="紧急联系电话">{{ currentPatient?.emergency_phone }}</a-descriptions-item>
+    </a-descriptions>
+
+    <a-divider />
+
+    <a-descriptions :column="2" title="预约信息" size="small">
+      <a-descriptions-item label="预约号">{{ detailRecord?.id }}</a-descriptions-item>
+      <a-descriptions-item label="状态">{{ { pending: '待就诊', completed: '已完成', cancelled: '已取消' }[detailRecord?.status]
+        }}</a-descriptions-item>
+      <a-descriptions-item label="科室">{{ detailRecord?.department }}</a-descriptions-item>
+      <a-descriptions-item label="医生">{{ detailRecord?.doctor }}</a-descriptions-item>
+      <a-descriptions-item label="时间" :span="2">{{ detailRecord?.time }}</a-descriptions-item>
+    </a-descriptions>
+  </a-modal>
 </template>
 
-<style scoped lang="scss">
-</style>
+<style scoped lang="scss"></style>

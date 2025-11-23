@@ -74,30 +74,20 @@ const router = createRouter({
               { key: 'list_pending', label: '待就诊' },
               { key: 'list_completed', label: '已完成' },
               { key: 'list_cancelled', label: '已取消' },
-              { key: 'list_by_department', label: '按科室' },
-              { key: 'list_by_doctor', label: '按医生' },
             ],
           },
           {
             key: 'sub_create',
             label: '新建预约',
             children: [
-              { key: 'create_select_department', label: '选择科室' },
-              { key: 'create_select_doctor', label: '选择医生' },
-              { key: 'create_select_timeslot', label: '选择时间段' },
-              { key: 'create_confirm', label: '确认生成' },
-              { key: 'create_reminders', label: '预约提醒' },
+              { key: 'create', label: '新建预约' },
             ],
           },
           {
             key: 'sub_schedules',
             label: '医生排班',
             children: [
-              { key: 'schedules_rules', label: '排班规则' },
               { key: 'schedules_roster', label: '医生班表' },
-              { key: 'schedules_holidays', label: '假期与休息日' },
-              { key: 'schedules_import', label: '批量导入' },
-              { key: 'schedules_conflicts', label: '冲突检测' },
             ],
           },
           {
@@ -105,9 +95,6 @@ const router = createRouter({
             label: '科室设置',
             children: [
               { key: 'departments_list', label: '科室列表' },
-              { key: 'departments_create', label: '新建科室' },
-              { key: 'departments_edit', label: '编辑科室' },
-              { key: 'departments_schedule', label: '排班配置' },
             ],
           },
         ],

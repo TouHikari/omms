@@ -10,7 +10,6 @@ import AppointmentsDepartments from '@/components/Appointments/AppointmentsDepar
 const route = useRoute()
 const router = useRouter()
 
-const sidebar = computed(() => route.meta?.sidebar || [])
 const currentMenu = computed(() => route.query.menu ? route.query.menu.toString() : 'list')
 const currentGroup = computed(() => currentMenu.value.split('_')[0])
 
@@ -39,6 +38,11 @@ const metrics = computed(() => {
   return { totalToday, pending, completed, cancelled }
 })
 
+function updateStatus(id, status) {
+  const a = appointments.value.find(x => x.id === id)
+  if (a) a.status = status
+}
+
 
 </script>
 
@@ -51,7 +55,7 @@ const metrics = computed(() => {
 
     <a-row :gutter="16" class="metrics">
       <a-col :span="6">
-        <a-card class="metric-card metric-today" :bordered="false" hoverable @click="setMenu('list_all')">
+        <a-card class="metric-card metric-today" :bordered="false">
           <div class="metric">
             <div class="metric-icon-wrap">
               <CalendarOutlined class="metric-icon" />
@@ -64,7 +68,7 @@ const metrics = computed(() => {
         </a-card>
       </a-col>
       <a-col :span="6">
-        <a-card class="metric-card metric-pending" :bordered="false" hoverable @click="setMenu('list_pending')">
+        <a-card class="metric-card metric-pending" :bordered="false">
           <div class="metric">
             <div class="metric-icon-wrap">
               <ClockCircleOutlined class="metric-icon" />
@@ -77,7 +81,7 @@ const metrics = computed(() => {
         </a-card>
       </a-col>
       <a-col :span="6">
-        <a-card class="metric-card metric-completed" :bordered="false" hoverable @click="setMenu('list_completed')">
+        <a-card class="metric-card metric-completed" :bordered="false">
           <div class="metric">
             <div class="metric-icon-wrap">
               <CheckCircleOutlined class="metric-icon" />
@@ -90,7 +94,7 @@ const metrics = computed(() => {
         </a-card>
       </a-col>
       <a-col :span="6">
-        <a-card class="metric-card metric-cancelled" :bordered="false" hoverable @click="setMenu('list_cancelled')">
+        <a-card class="metric-card metric-cancelled" :bordered="false">
           <div class="metric">
             <div class="metric-icon-wrap">
               <CloseCircleOutlined class="metric-icon" />
@@ -104,25 +108,9 @@ const metrics = computed(() => {
       </a-col>
     </a-row>
 
-    <section class="quick-links">
-      <div class="quick-title">快捷导航</div>
-      <a-row :gutter="12">
-        <a-col v-for="group in sidebar" :key="group.key" :span="6">
-          <a-card :title="group.label">
-            <a-space direction="vertical" style="width: 100%">
-              <a-button v-for="item in group.children" :key="item.key" block
-                :type="currentMenu === item.key ? 'primary' : 'default'" @click="setMenu(item.key)">
-                {{ item.label }}
-              </a-button>
-            </a-space>
-          </a-card>
-        </a-col>
-      </a-row>
-    </section>
-
     <section class="content">
       <template v-if="currentGroup === 'list'">
-        <AppointmentsList :current-menu="currentMenu" :departments="departments" :doctors="doctors" :appointments="appointments" :set-menu="setMenu" />
+        <AppointmentsList :current-menu="currentMenu" :departments="departments" :doctors="doctors" :appointments="appointments" :set-menu="setMenu" :update-status="updateStatus" />
       </template>
 
       <template v-else-if="currentGroup === 'create'">
@@ -234,16 +222,6 @@ const metrics = computed(() => {
 .metric-value {
   font-size: 22px;
   font-weight: 700;
-}
-
-.quick-links {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.quick-title {
-  font-weight: 600;
 }
 
 .content {
