@@ -1,8 +1,18 @@
+<script setup>
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const goHome = () => router.replace('/')
+</script>
+
 <template>
   <div class="not-found-container">
     <h2 class="not-found-title">404</h2>
     <a-divider>Not Found</a-divider>
     <p class="not-found-message">Oops! 很抱歉，页面不存在</p>
+    <div class="not-found-actions">
+      <a-button size="large" @click="goHome">返回主页</a-button>
+    </div>
   </div>
 </template>
 
@@ -31,5 +41,8 @@
 
 .not-found-message {
   font-size: 18px;
+}
+.not-found-actions {
+  margin-top: 16px;
 }
 </style>
