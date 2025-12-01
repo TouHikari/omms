@@ -70,3 +70,32 @@ export const records = [
   { id: 'MR-20250103-007', patient: '王小明', department: '内科', doctor: '张医生', createdAt: '2025-01-03 10:40', status: 'finalized', hasLab: true, hasImaging: false, chiefComplaint: '复诊', diagnosis: '上呼吸道感染恢复期', prescriptions: [], labs: ['复查血常规'], imaging: [] },
   { id: 'MR-20250104-008', patient: '李小红', department: '外科', doctor: '李医生', createdAt: '2025-01-04 09:10', status: 'archived', hasLab: false, hasImaging: true, chiefComplaint: '复诊', diagnosis: '胃肠炎恢复', prescriptions: [], labs: [], imaging: ['复查腹部超声'] },
 ];
+
+export const imagingOptions = [
+  { label: '胸片', value: '胸片' },
+  { label: '腹部超声', value: '腹部超声' },
+  { label: '头部CT', value: '头部CT' },
+  { label: '右臂X光', value: '右臂X光' },
+]
+
+export const labOptions = [
+  { label: '血常规', value: '血常规' },
+  { label: '尿常规', value: '尿常规' },
+  { label: '肝功能', value: '肝功能' },
+  { label: '过敏原筛查', value: '过敏原筛查' },
+]
+
+export const patientProfiles = {
+  '王小明': { patient_id: 1001, user_id: 5001, name: '王小明', gender: 1, birthday: '1990-04-12', id_card: '110101199004120011', address: '北京市朝阳区和平里', emergency_contact: '王女士', emergency_phone: '13800000001' },
+  '李小红': { patient_id: 1002, user_id: 5002, name: '李小红', gender: 0, birthday: '1992-08-22', id_card: '110101199208220022', address: '北京市海淀区西北旺', emergency_contact: '李先生', emergency_phone: '13800000002' },
+  '赵大海': { patient_id: 1003, user_id: 5003, name: '赵大海', gender: 1, birthday: '1985-01-10', id_card: '110101198501100033', address: '北京市丰台区丽泽', emergency_contact: '赵女士', emergency_phone: '13800000003' },
+  '孙一': { patient_id: 1004, user_id: 5004, name: '孙一', gender: 1, birthday: '1995-05-05', id_card: '110101199505050044', address: '北京市通州区梨园', emergency_contact: '孙先生', emergency_phone: '13800000004' },
+  '周二': { patient_id: 1005, user_id: 5005, name: '周二', gender: 0, birthday: '1998-12-12', id_card: '110101199812120055', address: '北京市石景山区古城', emergency_contact: '周女士', emergency_phone: '13800000005' },
+  '吴三': { patient_id: 1006, user_id: 5006, name: '吴三', gender: 1, birthday: '1991-03-18', id_card: '110101199103180066', address: '北京市昌平区北七家', emergency_contact: '吴先生', emergency_phone: '13800000006' },
+}
+
+export const recordTemplates = [
+  { id: 1, name: '内科通用病历模板', scope: '科室', fields: ['主诉', '现病史', '既往史', '诊断', '处方'], defaults: { chiefComplaint: '发热伴咳嗽3天', diagnosis: '上呼吸道感染待查', prescriptions: ['对乙酰氨基酚片'], labs: ['血常规'], imaging: [] } },
+  { id: 2, name: '外科术后随访模板', scope: '科室', fields: ['术后天数', '伤口情况', '复查项目', '诊断', '处方'], defaults: { chiefComplaint: '术后复诊随访', diagnosis: '术后恢复期', prescriptions: ['布洛芬缓释胶囊'], labs: [], imaging: ['腹部超声'] } },
+  { id: 3, name: '通用简易模板', scope: '通用', fields: ['主诉', '诊断'], defaults: { chiefComplaint: '主诉待填写', diagnosis: '待诊断', prescriptions: [], labs: [], imaging: [] } },
+]

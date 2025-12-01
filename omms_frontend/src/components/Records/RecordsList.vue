@@ -1,5 +1,9 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { message } from 'ant-design-vue'
+import { useAuthStore } from '@/stores/auth'
+import { updateRecord } from '@/api/record'
+import { imagingOptions, labOptions, patientProfiles } from '@/api/mockData'
 
 const props = defineProps({
   currentMenu: { type: String, required: true },
@@ -21,6 +25,7 @@ const columns = [
 ]
 
 const modeFilter = ref('all')
+const statusFilter = ref('draft')
 const patientKeyword = ref('')
 const doctorId = ref(null)
 const dateRange = ref([])
@@ -34,16 +39,28 @@ watch(() => props.currentMenu, (m) => {
     else if (key === 'list_by_doctor') modeFilter.value = 'by_doctor'
     else if (key === 'list_by_date') modeFilter.value = 'by_date'
     else if (key === 'list_lab_imaging') modeFilter.value = 'lab_imaging'
+    else if (key.startsWith('list_status_')) {
+      modeFilter.value = 'by_status'
+      statusFilter.value = key.replace('list_status_', '')
+    }
     else modeFilter.value = 'all'
   }
 }, { immediate: true })
 
 watch(modeFilter, (s) => {
   const map = { all: 'list_all', by_patient: 'list_by_patient', by_doctor: 'list_by_doctor', by_date: 'list_by_date', lab_imaging: 'list_lab_imaging' }
-  const targetMenu = map[s] || 'list_all'
+  const targetMenu = s === 'by_status' ? `list_status_${statusFilter.value}` : (map[s] || 'list_all')
   const key = (props.currentMenu || '')
   if (key.startsWith('list_') && targetMenu !== props.currentMenu) props.setMenu(targetMenu)
   currentPage.value = 1
+})
+
+watch(statusFilter, (st) => {
+  if (modeFilter.value === 'by_status') {
+    const targetMenu = `list_status_${st}`
+    if (targetMenu !== props.currentMenu) props.setMenu(targetMenu)
+    currentPage.value = 1
+  }
 })
 
 function onTableChange(pagination) {
@@ -86,20 +103,16 @@ const filteredRecords = computed(() => {
   if (mode === 'lab_imaging') {
     return list.filter(r => r.hasLab || r.hasImaging)
   }
+  if (mode === 'by_status') {
+    return list.filter(r => r.status === statusFilter.value)
+  }
   return list
 })
 
 const detailVisible = ref(false)
 const detailRecord = ref(null)
 
-const patientsByName = {
-  '王小明': { patient_id: 1001, user_id: 5001, name: '王小明', gender: 1, birthday: '1990-04-12', id_card: '110101199004120011', address: '北京市朝阳区和平里', emergency_contact: '王女士', emergency_phone: '13800000001' },
-  '李小红': { patient_id: 1002, user_id: 5002, name: '李小红', gender: 0, birthday: '1992-08-22', id_card: '110101199208220022', address: '北京市海淀区西北旺', emergency_contact: '李先生', emergency_phone: '13800000002' },
-  '赵大海': { patient_id: 1003, user_id: 5003, name: '赵大海', gender: 1, birthday: '1985-01-10', id_card: '110101198501100033', address: '北京市丰台区丽泽', emergency_contact: '赵女士', emergency_phone: '13800000003' },
-  '孙一': { patient_id: 1004, user_id: 5004, name: '孙一', gender: 1, birthday: '1995-05-05', id_card: '110101199505050044', address: '北京市通州区梨园', emergency_contact: '孙先生', emergency_phone: '13800000004' },
-  '周二': { patient_id: 1005, user_id: 5005, name: '周二', gender: 0, birthday: '1998-12-12', id_card: '110101199812120055', address: '北京市石景山区古城', emergency_contact: '周女士', emergency_phone: '13800000005' },
-  '吴三': { patient_id: 1006, user_id: 5006, name: '吴三', gender: 1, birthday: '1991-03-18', id_card: '110101199103180066', address: '北京市昌平区北七家', emergency_contact: '吴先生', emergency_phone: '13800000006' },
-}
+const patientsByName = patientProfiles
 
 const currentPatient = computed(() => {
   const r = detailRecord.value
@@ -122,18 +135,81 @@ async function onUpdateStatus(record, status) {
   }
 }
 
+const auth = useAuthStore()
+const canEditDraft = computed(() => ['admin', 'doctor', 'nurse'].includes(auth.role))
+
+const editVisible = ref(false)
+const editRecord = ref(null)
+const editForm = ref({ chiefComplaint: '', diagnosis: '', prescriptions: [], labs: [], imaging: [] })
+
+function openEdit(record) {
+  editRecord.value = record
+  editForm.value = {
+    chiefComplaint: record.chiefComplaint || '',
+    diagnosis: record.diagnosis || '',
+    prescriptions: Array.isArray(record.prescriptions) ? [...record.prescriptions] : [],
+    labs: Array.isArray(record.labs) ? [...record.labs] : [],
+    imaging: Array.isArray(record.imaging) ? [...record.imaging] : [],
+  }
+  editVisible.value = true
+}
+
+function addEditItem(listKey, input) {
+  const v = (input || '').trim()
+  if (!v) return
+  const arr = editForm.value[listKey]
+  if (!arr.includes(v)) arr.push(v)
+}
+
+function removeEditItem(listKey, idx) {
+  editForm.value[listKey].splice(idx, 1)
+}
+
+async function submitEdit() {
+  if (!editRecord.value) return
+  const payload = {
+    chiefComplaint: editForm.value.chiefComplaint,
+    diagnosis: editForm.value.diagnosis,
+    prescriptions: editForm.value.prescriptions,
+    labs: editForm.value.labs,
+    imaging: editForm.value.imaging,
+  }
+  const res = await updateRecord(editRecord.value.id, payload)
+  if (res.code === 200) {
+    const r = editRecord.value
+    r.chiefComplaint = res.data.chiefComplaint
+    r.diagnosis = res.data.diagnosis
+    r.prescriptions = res.data.prescriptions
+    r.labs = res.data.labs
+    r.imaging = res.data.imaging
+    r.hasLab = res.data.hasLab
+    r.hasImaging = res.data.hasImaging
+    message.success('病历更新成功')
+    editVisible.value = false
+  } else {
+    message.error(res.message || '更新失败')
+  }
+}
+
 </script>
 
 <template>
   <a-card>
     <a-space style="margin-bottom: 12px; width: 100%; justify-content: space-between">
       <div>
+        <span style="margin-bottom: 4px">筛选方式：</span>
         <a-radio-group v-model:value="modeFilter" button-style="solid">
           <a-radio-button value="all">全部</a-radio-button>
           <a-radio-button value="by_patient">按患者</a-radio-button>
           <a-radio-button value="by_doctor">按医生</a-radio-button>
           <a-radio-button value="by_date">按日期</a-radio-button>
           <a-radio-button value="lab_imaging">检验/检查结果</a-radio-button>
+          <a-radio-button value="by_status">按状态</a-radio-button>
+        </a-radio-group>
+        <a-radio-group v-if="modeFilter === 'by_status'" v-model:value="statusFilter" style="margin-left: 12px">
+          <a-radio-button value="draft">草稿</a-radio-button>
+          <a-radio-button value="finalized">定稿</a-radio-button>
+          <a-radio-button value="archived">归档</a-radio-button>
         </a-radio-group>
         <a-input-search v-if="modeFilter === 'by_patient'" v-model:value="patientKeyword" style="margin-left: 12px; width: 240px" placeholder="输入患者姓名" />
         <a-select v-if="modeFilter === 'by_doctor'" v-model:value="doctorId" :options="doctorOptions" style="margin-left: 12px; width: 260px" placeholder="选择医生" />
@@ -167,6 +243,7 @@ async function onUpdateStatus(record, status) {
                 </a-menu>
               </template>
             </a-dropdown>
+            <a-button v-if="canEditDraft && record.status === 'draft'" type="link" @click="openEdit(record)">编辑</a-button>
           </a-space>
         </template>
       </template>
@@ -206,6 +283,29 @@ async function onUpdateStatus(record, status) {
       <a-descriptions-item label="紧急联系人">{{ currentPatient?.emergency_contact }}</a-descriptions-item>
       <a-descriptions-item label="紧急联系电话">{{ currentPatient?.emergency_phone }}</a-descriptions-item>
     </a-descriptions>
+  </a-modal>
+
+  <a-modal v-model:open="editVisible" title="编辑病历" width="720px" @ok="submitEdit">
+    <a-form layout="vertical">
+      <a-form-item label="主诉">
+        <a-textarea v-model:value="editForm.chiefComplaint" :rows="3" placeholder="主诉" />
+      </a-form-item>
+      <a-form-item label="诊断">
+        <a-textarea v-model:value="editForm.diagnosis" :rows="3" placeholder="诊断" />
+      </a-form-item>
+      <a-form-item label="处方药品">
+        <a-input-search placeholder="输入药品名称后回车加入" @search="v => addEditItem('prescriptions', v)" />
+        <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap">
+          <a-tag v-for="(item, idx) in editForm.prescriptions" :key="item" closable @close.prevent="removeEditItem('prescriptions', idx)" color="blue">{{ item }}</a-tag>
+        </div>
+      </a-form-item>
+      <a-form-item label="检查申请">
+        <a-checkbox-group v-model:value="editForm.imaging" :options="imagingOptions" />
+      </a-form-item>
+      <a-form-item label="检验申请">
+        <a-checkbox-group v-model:value="editForm.labs" :options="labOptions" />
+      </a-form-item>
+    </a-form>
   </a-modal>
 </template>
 

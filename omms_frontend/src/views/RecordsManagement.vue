@@ -59,6 +59,10 @@ const refreshRecords = async () => {
   }
 }
 
+function onRecordCreated() {
+  refreshRecords()
+}
+
 watch(currentMenu, (m) => {
   if ((m || '').startsWith('list')) {
     refreshRecords()
@@ -70,8 +74,9 @@ const metrics = computed(() => {
   const totalToday = records.value.filter(r => (r.createdAt || '').slice(0, 10) === todayStr).length
   const draft = records.value.filter(r => r.status === 'draft').length
   const finalized = records.value.filter(r => r.status === 'finalized').length
+  const archived = records.value.filter(r => r.status === 'archived').length
   const withTests = records.value.filter(r => r.hasLab || r.hasImaging).length
-  return { totalToday, draft, finalized, withTests }
+  return { totalToday, draft, finalized, archived, withTests }
 })
 
 async function updateStatus(id, status) {
@@ -105,60 +110,67 @@ const panelMenuMap = { list: 'list_all', create: 'create', templates: 'templates
 <template>
   <PageLayout title="病历管理" desc="病历列表、新建病历与模板管理" :panels="pagePanels" :menu-map="panelMenuMap">
     <template #metrics>
-      <a-row :gutter="16">
-        <a-col :span="6">
-          <a-card class="metric-card metric-today" :bordered="false" @click="setMenu('list_all')">
-            <div class="metric">
-              <div class="metric-icon-wrap">
-                <FileTextOutlined class="metric-icon" />
-              </div>
-              <div class="metric-content">
-                <div class="metric-label">今日病历</div>
-                <div class="metric-value">{{ metrics.totalToday }}</div>
-              </div>
+      <div class="metrics-grid">
+        <a-card class="metric-card metric-today" :bordered="false" @click="setMenu('list_all')">
+          <div class="metric">
+            <div class="metric-icon-wrap">
+              <FileTextOutlined class="metric-icon" />
             </div>
-          </a-card>
-        </a-col>
-        <a-col :span="6">
-          <a-card class="metric-card metric-pending" :bordered="false" @click="setMenu('list_by_date')">
-            <div class="metric">
-              <div class="metric-icon-wrap">
-                <ClockCircleOutlined class="metric-icon" />
-              </div>
-              <div class="metric-content">
-                <div class="metric-label">草稿中</div>
-                <div class="metric-value">{{ metrics.draft }}</div>
-              </div>
+            <div class="metric-content">
+              <div class="metric-label">今日病历</div>
+              <div class="metric-value">{{ metrics.totalToday }}</div>
             </div>
-          </a-card>
-        </a-col>
-        <a-col :span="6">
-          <a-card class="metric-card metric-completed" :bordered="false" @click="setMenu('list_by_doctor')">
-            <div class="metric">
-              <div class="metric-icon-wrap">
-                <CheckCircleOutlined class="metric-icon" />
-              </div>
-              <div class="metric-content">
-                <div class="metric-label">已定稿</div>
-                <div class="metric-value">{{ metrics.finalized }}</div>
-              </div>
+          </div>
+        </a-card>
+
+        <a-card class="metric-card metric-pending" :bordered="false" @click="setMenu('list_status_draft')">
+          <div class="metric">
+            <div class="metric-icon-wrap">
+              <ClockCircleOutlined class="metric-icon" />
             </div>
-          </a-card>
-        </a-col>
-        <a-col :span="6">
-          <a-card class="metric-card metric-cancelled" :bordered="false" @click="setMenu('list_lab_imaging')">
-            <div class="metric">
-              <div class="metric-icon-wrap">
-                <ExperimentOutlined class="metric-icon" />
-              </div>
-              <div class="metric-content">
-                <div class="metric-label">含检验/检查</div>
-                <div class="metric-value">{{ metrics.withTests }}</div>
-              </div>
+            <div class="metric-content">
+              <div class="metric-label">草稿中</div>
+              <div class="metric-value">{{ metrics.draft }}</div>
             </div>
-          </a-card>
-        </a-col>
-      </a-row>
+          </div>
+        </a-card>
+
+        <a-card class="metric-card metric-completed" :bordered="false" @click="setMenu('list_status_finalized')">
+          <div class="metric">
+            <div class="metric-icon-wrap">
+              <CheckCircleOutlined class="metric-icon" />
+            </div>
+            <div class="metric-content">
+              <div class="metric-label">已定稿</div>
+              <div class="metric-value">{{ metrics.finalized }}</div>
+            </div>
+          </div>
+        </a-card>
+
+        <a-card class="metric-card metric-archived" :bordered="false" @click="setMenu('list_status_archived')">
+          <div class="metric">
+            <div class="metric-icon-wrap">
+              <FileTextOutlined class="metric-icon" />
+            </div>
+            <div class="metric-content">
+              <div class="metric-label">已归档</div>
+              <div class="metric-value">{{ metrics.archived }}</div>
+            </div>
+          </div>
+        </a-card>
+
+        <a-card class="metric-card metric-cancelled" :bordered="false" @click="setMenu('list_lab_imaging')">
+          <div class="metric">
+            <div class="metric-icon-wrap">
+              <ExperimentOutlined class="metric-icon" />
+            </div>
+            <div class="metric-content">
+              <div class="metric-label">含检验/检查</div>
+              <div class="metric-value">{{ metrics.withTests }}</div>
+            </div>
+          </div>
+        </a-card>
+      </div>
     </template>
 
     <template #panel-list>
@@ -166,7 +178,7 @@ const panelMenuMap = { list: 'list_all', create: 'create', templates: 'templates
     </template>
 
     <template #panel-create>
-      <RecordsCreate :departments="departments" :doctors="doctors" />
+      <RecordsCreate :departments="departments" :doctors="doctors" :on-created="onRecordCreated" />
     </template>
 
     <template #panel-templates>
@@ -211,6 +223,12 @@ const panelMenuMap = { list: 'list_all', create: 'create', templates: 'templates
   color: $flat-danger-text;
 }
 
+.metric-archived {
+  background-color: $flat-danger-bg;
+  border: 1px solid $flat-danger-border;
+  color: $flat-danger-text;
+}
+
 .metric {
   display: flex;
   align-items: center;
@@ -244,6 +262,19 @@ const panelMenuMap = { list: 'list_all', create: 'create', templates: 'templates
 .metric-value {
   font-size: 22px;
   font-weight: 700;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+@media (min-width: 1600px) {
+  .metrics-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
 }
 
 </style>

@@ -79,9 +79,8 @@ const router = createRouter({
           {
             key: 'sub_create',
             label: '新建预约',
-            children: [
-              { key: 'create', label: '新建预约' },
-            ],
+            navKey: 'create',
+            children: [],
           },
           {
             key: 'sub_schedules',
@@ -106,18 +105,17 @@ const router = createRouter({
             label: '病历列表',
             children: [
               { key: 'list_all', label: '全部病历' },
-              { key: 'list_by_patient', label: '按患者' },
-              { key: 'list_by_doctor', label: '按医生' },
-              { key: 'list_by_date', label: '按日期' },
-              { key: 'list_lab_imaging', label: '检验/检查结果' },
+              { key: 'list_by_patient', label: '按患者筛选' },
+              { key: 'list_by_doctor', label: '按医生筛选' },
+              { key: 'list_by_date', label: '按日期筛选' },
+              { key: 'list_lab_imaging', label: '按检验/检查结果筛选' },
             ]
           },
           {
             key: 'sub_create',
             label: '新建病历',
-            children: [
-              { key: 'create', label: '新建病历' },
-            ]
+            navKey: 'create',
+            children: []
           },
           {
             key: 'sub_templates',
@@ -125,8 +123,6 @@ const router = createRouter({
             children: [
               { key: 'templates_list', label: '模板列表' },
               { key: 'templates_create', label: '新建模板' },
-              { key: 'templates_department', label: '科室模板' },
-              { key: 'templates_share', label: '共享与权限' },
             ]
           },
         ],

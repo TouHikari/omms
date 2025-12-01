@@ -91,12 +91,15 @@ async function onUpdateStatus(record, status) {
 <template>
   <a-card>
     <a-space style="margin-bottom: 12px; width: 100%; justify-content: space-between">
-      <a-radio-group v-model:value="statusFilter" button-style="solid">
-        <a-radio-button value="all">全部</a-radio-button>
-        <a-radio-button value="pending">待就诊</a-radio-button>
-        <a-radio-button value="completed">已完成</a-radio-button>
-        <a-radio-button value="cancelled">已取消</a-radio-button>
-      </a-radio-group>
+      <div>
+        <span style="margin-bottom: 4px">筛选方式：</span>
+        <a-radio-group v-model:value="statusFilter" button-style="solid">
+          <a-radio-button value="all">全部</a-radio-button>
+          <a-radio-button value="pending">待就诊</a-radio-button>
+          <a-radio-button value="completed">已完成</a-radio-button>
+          <a-radio-button value="cancelled">已取消</a-radio-button>
+        </a-radio-group>
+      </div>
       <a-button type="primary" @click="setMenu('create')">新建预约</a-button>
     </a-space>
     <a-table

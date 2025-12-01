@@ -1,10 +1,11 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import { FileTextOutlined, SolutionOutlined, MedicineBoxOutlined, PictureOutlined, ExperimentOutlined, LeftOutlined } from '@ant-design/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getDepartments, getDoctorsByDept } from '@/api/appointment'
-import { createRecord } from '@/api/record'
+import { imagingOptions, labOptions } from '@/api/mockData'
+import { createRecord, getRecordTemplateById, getRecordTemplates } from '@/api/record'
 
 const router = useRouter()
 const route = useRoute()
@@ -12,6 +13,7 @@ const route = useRoute()
 const props = defineProps({
   departments: { type: Array, default: () => [] },
   doctors: { type: Array, default: () => [] },
+  onCreated: { type: Function, default: undefined },
 })
 
 const currentStep = ref(0)
@@ -19,9 +21,11 @@ const loading = ref(false)
 
 const deptList = ref([])
 const doctorList = ref([])
+const templatesList = ref([])
 
 const selectedDept = ref(null)
 const selectedDoctorId = ref(null)
+const selectedTemplateId = ref(null)
 const patientName = ref('')
 const chiefComplaint = ref('')
 const diagnosis = ref('')
@@ -29,6 +33,7 @@ const prescriptions = ref([])
 const imaging = ref([])
 const labs = ref([])
 const recordResult = ref(null)
+const pendingTemplateDefaults = ref(null)
 
 const steps = [
   { title: '病史采集', icon: FileTextOutlined },
@@ -53,6 +58,58 @@ onMounted(async () => {
     message.error('加载科室数据失败')
   } finally {
     loading.value = false
+  }
+})
+
+onMounted(async () => {
+  try {
+    const res = await getRecordTemplates()
+    if (res.code === 200) templatesList.value = res.data
+  } catch {
+    message.error('加载模板列表失败')
+  }
+})
+
+async function applyTemplateFromRoute() {
+  const tplId = route.query.tpl
+  if (!tplId) return
+  try {
+    const res = await getRecordTemplateById(tplId)
+    if (res.code === 200) {
+      const d = res.data?.defaults || {}
+      selectedTemplateId.value = Number(res.data.id)
+      pendingTemplateDefaults.value = d
+      message.success(`已选择模板：${res.data.name}`)
+    }
+  } catch {
+    message.warning('选择模板失败')
+  }
+}
+
+onMounted(() => applyTemplateFromRoute())
+
+function applySelectedTemplateDefaults() {
+  const d = pendingTemplateDefaults.value
+  if (!d) return
+  chiefComplaint.value = d.chiefComplaint ?? chiefComplaint.value
+  diagnosis.value = d.diagnosis ?? diagnosis.value
+  prescriptions.value = Array.isArray(d.prescriptions) ? [...d.prescriptions] : prescriptions.value
+  imaging.value = Array.isArray(d.imaging) ? [...d.imaging] : imaging.value
+  labs.value = Array.isArray(d.labs) ? [...d.labs] : labs.value
+  pendingTemplateDefaults.value = null
+  message.success('已应用模板信息')
+}
+
+function onSelectTemplate(id) {
+  selectedTemplateId.value = id
+  const tpl = templatesList.value.find(t => t.id === id)
+  pendingTemplateDefaults.value = tpl?.defaults || null
+  if (tpl) message.success(`已选择模板：${tpl.name}`)
+}
+
+watch(selectedTemplateId, (id) => {
+  if (id && currentStep.value > 0) {
+    applySelectedTemplateDefaults()
   }
 })
 
@@ -81,6 +138,9 @@ const onSelectDept = async (dept) => {
 }
 
 function nextStep() {
+  if (currentStep.value === 0 && pendingTemplateDefaults.value) {
+    applySelectedTemplateDefaults()
+  }
   if (currentStep.value < steps.length - 1) {
     currentStep.value++
   }
@@ -102,19 +162,6 @@ function removePrescription(idx) {
   prescriptions.value.splice(idx, 1)
 }
 
-const imagingOptions = [
-  { label: '胸片', value: '胸片' },
-  { label: '腹部超声', value: '腹部超声' },
-  { label: '头部CT', value: '头部CT' },
-  { label: '右臂X光', value: '右臂X光' },
-]
-
-const labOptions = [
-  { label: '血常规', value: '血常规' },
-  { label: '尿常规', value: '尿常规' },
-  { label: '肝功能', value: '肝功能' },
-  { label: '过敏原筛查', value: '过敏原筛查' },
-]
 
 async function onSubmit() {
   if (!selectedDept.value || !selectedDoctorId.value) {
@@ -142,6 +189,7 @@ async function onSubmit() {
       recordResult.value = res.data
       message.success('病历创建成功')
       currentStep.value = steps.length
+      props.onCreated?.(res.data)
     }
   } catch {
     message.error('病历创建失败，请重试')
@@ -181,31 +229,36 @@ function reset() {
       </a-steps>
 
       <div class="step-content">
-        <div v-if="currentStep === 0">
-          <a-spin :spinning="loading">
-            <div class="grid-container">
-              <a-card v-for="dept in deptList" :key="dept.id" hoverable class="selection-card" @click="onSelectDept(dept)">
-                <template #cover>
-                  <div class="card-icon bg-blue">
-                    <SolutionOutlined />
-                  </div>
-                </template>
-                <a-card-meta :title="dept.name">
-                  <template #description>{{ dept.description }}</template>
-                </a-card-meta>
-              </a-card>
-            </div>
-          </a-spin>
-
-          <div v-if="selectedDept" class="doctor-select">
-            <div class="label">选择医生：</div>
-            <a-select v-model:value="selectedDoctorId" :options="doctorList.map(d => ({ label: `${d.name}（${d.title}）`, value: d.id }))" style="width: 280px" placeholder="请选择医生" />
+      <div v-if="currentStep === 0">
+        <a-spin :spinning="loading">
+          <div class="grid-container">
+            <a-card v-for="dept in deptList" :key="dept.id" hoverable class="selection-card" @click="onSelectDept(dept)">
+              <template #cover>
+                <div class="card-icon bg-blue">
+                  <SolutionOutlined />
+                </div>
+              </template>
+              <a-card-meta :title="dept.name">
+                <template #description>{{ dept.description }}</template>
+              </a-card-meta>
+            </a-card>
           </div>
+        </a-spin>
 
-          <div class="patient-input">
-            <div class="label">患者姓名：</div>
-            <a-input v-model:value="patientName" style="width: 280px" placeholder="请输入患者姓名" />
-          </div>
+        <div class="template-select">
+          <div class="label">选择模板：</div>
+          <a-select v-model:value="selectedTemplateId" :options="templatesList.map(t => ({ label: t.name, value: t.id }))" style="width: 280px" placeholder="可选，选择后自动填充后续步骤" @change="onSelectTemplate" />
+        </div>
+
+        <div v-if="selectedDept" class="doctor-select">
+          <div class="label">选择医生：</div>
+          <a-select v-model:value="selectedDoctorId" :options="doctorList.map(d => ({ label: `${d.name}（${d.title}）`, value: d.id }))" style="width: 280px" placeholder="请选择医生" />
+        </div>
+
+        <div class="patient-input">
+          <div class="label">患者姓名：</div>
+          <a-input v-model:value="patientName" style="width: 280px" placeholder="请输入患者姓名" />
+        </div>
 
           <div class="actions">
             <a-button type="primary" :disabled="!selectedDept || !selectedDoctorId || !patientName?.trim()" @click="nextStep">下一步</a-button>
