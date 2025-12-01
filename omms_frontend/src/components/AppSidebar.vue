@@ -52,7 +52,10 @@ function syncOpen() {
   const selected = route.query.menu ? route.query.menu.toString() : ''
   state.selectedKeys = selected ? [selected] : []
   const parent = items.value.find(g => (g.children || []).some(c => c.key === selected))
-  state.openKeys = parent ? [parent.key] : []
+  const validGroupKeys = items.value.map(g => g.key)
+  const current = (state.openKeys || []).filter(k => validGroupKeys.includes(k))
+  if (parent && !current.includes(parent.key)) current.push(parent.key)
+  state.openKeys = current
 }
 
 const onOpenChange = openKeys => {
