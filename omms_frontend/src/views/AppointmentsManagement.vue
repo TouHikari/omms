@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { CalendarOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
@@ -12,7 +12,7 @@ import { getDepartments, getAllDoctors, getAppointments, updateAppointmentStatus
 const route = useRoute()
 const router = useRouter()
 
-const currentMenu = computed(() => route.query.menu ? route.query.menu.toString() : 'list')
+const currentMenu = computed(() => route.query.menu ? route.query.menu.toString() : 'list_all')
 const currentGroup = computed(() => currentMenu.value.split('_')[0])
 
 const setMenu = key => {
@@ -72,6 +72,18 @@ async function updateStatus(id, status) {
   }
 }
 
+const activePanel = ref(currentGroup.value)
+const onCollapseChange = (key) => {
+  const k = Array.isArray(key) ? key[0] : key
+  const groupToMenu = { list: 'list_all', create: 'create', schedules: 'schedules_roster', departments: 'departments_list' }
+  const menuKey = groupToMenu[k] || k
+  if (menuKey && menuKey !== currentMenu.value) setMenu(menuKey)
+}
+
+watch(currentGroup, (g) => {
+  activePanel.value = g
+}, { immediate: true })
+
 </script>
 
 <template>
@@ -83,7 +95,7 @@ async function updateStatus(id, status) {
 
     <a-row :gutter="16" class="metrics">
       <a-col :span="6">
-        <a-card class="metric-card metric-today" :bordered="false" @click="setMenu('list')">
+        <a-card class="metric-card metric-today" :bordered="false" @click="setMenu('list_all')">
           <div class="metric">
             <div class="metric-icon-wrap">
               <CalendarOutlined class="metric-icon" />
@@ -137,21 +149,20 @@ async function updateStatus(id, status) {
     </a-row>
 
     <section class="content">
-      <template v-if="currentGroup === 'list'">
-        <AppointmentsList :current-menu="currentMenu" :departments="departments" :doctors="doctors" :appointments="appointments" :set-menu="setMenu" :update-status="updateStatus" />
-      </template>
-
-      <template v-else-if="currentGroup === 'create'">
-        <AppointmentsCreate :departments="departments" :doctors="doctors" />
-      </template>
-
-      <template v-else-if="currentGroup === 'schedules'">
-        <AppointmentsSchedules :doctors="doctors" />
-      </template>
-
-      <template v-else-if="currentGroup === 'departments'">
-        <AppointmentsDepartments :departments="departments" />
-      </template>
+      <a-collapse v-model:activeKey="activePanel" accordion @change="onCollapseChange">
+        <a-collapse-panel key="list" header="预约列表">
+          <AppointmentsList :current-menu="currentMenu" :departments="departments" :doctors="doctors" :appointments="appointments" :set-menu="setMenu" :update-status="updateStatus" />
+        </a-collapse-panel>
+        <a-collapse-panel key="create" header="新建预约">
+          <AppointmentsCreate :departments="departments" :doctors="doctors" />
+        </a-collapse-panel>
+        <a-collapse-panel key="schedules" header="医生排班">
+          <AppointmentsSchedules :doctors="doctors" />
+        </a-collapse-panel>
+        <a-collapse-panel key="departments" header="科室设置">
+          <AppointmentsDepartments :departments="departments" />
+        </a-collapse-panel>
+      </a-collapse>
     </section>
   </section>
 </template>

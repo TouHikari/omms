@@ -46,15 +46,14 @@ const rootSubmenuKeys = computed(() => items.value.map(g => g.key))
 
 watch(rootSubmenuKeys, (keys) => {
   state.rootSubmenuKeys = keys
-  if (!state.openKeys.length) {
-    state.openKeys = keys.length ? [keys[0]] : []
-  }
 }, { immediate: true })
 
-watch(() => route.path, () => {
-  const first = rootSubmenuKeys.value[0]
-  state.openKeys = first ? [first] : []
-})
+function syncOpen() {
+  const selected = route.query.menu ? route.query.menu.toString() : ''
+  state.selectedKeys = selected ? [selected] : []
+  const parent = items.value.find(g => (g.children || []).some(c => c.key === selected))
+  state.openKeys = parent ? [parent.key] : (rootSubmenuKeys.value.length ? [rootSubmenuKeys.value[0]] : [])
+}
 
 const onOpenChange = openKeys => {
   const latestOpenKey = openKeys.find(key => state.openKeys.indexOf(key) === -1)
@@ -69,9 +68,8 @@ function onSelect({ key }) {
   router.replace({ path: route.path, query: { ...route.query, menu: key } })
 }
 
-watch(() => route.query.menu, (menu) => {
-  state.selectedKeys = menu ? [menu.toString()] : []
-}, { immediate: true })
+watch(() => route.query.menu, () => syncOpen(), { immediate: true })
+watch(() => route.path, () => syncOpen())
 </script>
 
 <style scoped lang="scss">

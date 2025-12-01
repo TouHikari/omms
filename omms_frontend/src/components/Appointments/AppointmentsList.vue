@@ -29,6 +29,11 @@ watch(() => props.currentMenu, (m) => {
   else statusFilter.value = 'all'
 }, { immediate: true })
 
+watch(statusFilter, (s) => {
+  const targetMenu = s === 'all' ? 'list_all' : `list_${s}`
+  if (targetMenu !== props.currentMenu) props.setMenu(targetMenu)
+})
+
 const filteredAppointments = computed(() => {
   const s = statusFilter.value
   if (s === 'pending') return props.appointments.filter(a => a.status === 'pending')
