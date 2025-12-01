@@ -52,16 +52,11 @@ function syncOpen() {
   const selected = route.query.menu ? route.query.menu.toString() : ''
   state.selectedKeys = selected ? [selected] : []
   const parent = items.value.find(g => (g.children || []).some(c => c.key === selected))
-  state.openKeys = parent ? [parent.key] : (rootSubmenuKeys.value.length ? [rootSubmenuKeys.value[0]] : [])
+  state.openKeys = parent ? [parent.key] : []
 }
 
 const onOpenChange = openKeys => {
-  const latestOpenKey = openKeys.find(key => state.openKeys.indexOf(key) === -1)
-  if (state.rootSubmenuKeys.indexOf(latestOpenKey) === -1) {
-    state.openKeys = openKeys
-  } else {
-    state.openKeys = latestOpenKey ? [latestOpenKey] : []
-  }
+  state.openKeys = openKeys
 }
 
 function onSelect({ key }) {

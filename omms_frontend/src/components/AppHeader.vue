@@ -83,7 +83,19 @@ const keyToPath = {
 
 function onMenuSelect({ key }) {
   const path = keyToPath[key]
-  if (path) router.push(path)
+  const defaultMenuByKey = {
+    dashboard: 'overview_today',
+    appointments: 'list_all',
+    records: 'list_all',
+    pharmacy: 'inventory_drugs',
+    inpatient: 'wards_list',
+    payments: 'transactions_list',
+    reports: 'daily_visits',
+  }
+  if (path) {
+    const menu = defaultMenuByKey[key]
+    router.push(menu ? { path, query: { menu } } : { path })
+  }
 }
 
 function syncSelected() {
