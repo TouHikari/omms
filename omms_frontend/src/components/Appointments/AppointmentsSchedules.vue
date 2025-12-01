@@ -17,8 +17,14 @@ defineProps({
         { title: '周五', dataIndex: 'friday', key: 'friday' },
       ]"
       :pagination="false"
-      rowKey="doctor"
-    />
+      rowKey="doctor.id"
+    >
+      <template #bodyCell="{ column, text }">
+        <template v-if="column.key === 'doctor'">
+          {{ text.name || text }}
+        </template>
+      </template>
+    </a-table>
   </a-card>
 </template>
 

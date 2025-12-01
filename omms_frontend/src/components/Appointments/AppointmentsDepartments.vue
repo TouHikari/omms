@@ -7,8 +7,8 @@ defineProps({
 <template>
   <a-card title="科室设置">
     <a-row :gutter="12">
-      <a-col :span="6" v-for="d in departments" :key="d">
-        <a-card :title="d" size="small">
+      <a-col :span="6" v-for="d in departments" :key="d.id || d">
+        <a-card :title="d.name || d" size="small">
           <a-space>
             <a-button type="link">编辑</a-button>
             <a-button type="link">排班配置</a-button>

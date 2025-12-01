@@ -1,11 +1,13 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { CalendarOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
 import AppointmentsList from '@/components/Appointments/AppointmentsList.vue'
 import AppointmentsCreate from '@/components/Appointments/AppointmentsCreate.vue'
 import AppointmentsSchedules from '@/components/Appointments/AppointmentsSchedules.vue'
 import AppointmentsDepartments from '@/components/Appointments/AppointmentsDepartments.vue'
+import { getDepartments, getAllDoctors, getAppointments, updateAppointmentStatus } from '@/api/appointment'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,32 +19,58 @@ const setMenu = key => {
   router.replace({ path: route.path, query: { ...route.query, menu: key } })
 }
 
-const departments = ['内科', '外科', '儿科', '骨科', '皮肤科']
-const doctors = ['张医生', '李医生', '王医生', '赵医生']
+const departments = ref([])
+const doctors = ref([])
+const appointments = ref([])
+const loading = ref(false)
 
+const loadData = async () => {
+  loading.value = true
+  try {
+    const [deptRes, docRes, apptRes] = await Promise.all([
+      getDepartments(),
+      getAllDoctors(),
+      getAppointments()
+    ])
 
-const appointments = ref([
-  { id: 'R-20250101-001', patient: '王小明', department: '内科', doctor: '张医生', time: '2025-01-01 09:00', status: 'pending' },
-  { id: 'R-20250101-002', patient: '李小红', department: '外科', doctor: '李医生', time: '2025-01-01 10:00', status: 'completed' },
-  { id: 'R-20250101-003', patient: '赵大海', department: '儿科', doctor: '王医生', time: '2025-01-01 11:00', status: 'cancelled' },
-  { id: 'R-20250102-004', patient: '孙一', department: '骨科', doctor: '赵医生', time: '2025-01-02 14:00', status: 'pending' },
-  { id: 'R-20250102-005', patient: '周二', department: '皮肤科', doctor: '张医生', time: '2025-01-02 15:00', status: 'completed' },
-  { id: 'R-20250103-006', patient: '吴三', department: '内科', doctor: '李医生', time: '2025-01-03 09:30', status: 'pending' },
-])
+    if (deptRes.code === 200) departments.value = deptRes.data
+    if (docRes.code === 200) doctors.value = docRes.data
+    if (apptRes.code === 200) appointments.value = apptRes.data
+  } catch (error) {
+    console.error(error)
+    message.error('加载数据失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadData()
+})
 
 const metrics = computed(() => {
-  const totalToday = appointments.value.filter(a => a.time.startsWith('2025-01-02')).length
+  const todayStr = new Date().toISOString().split('T')[0]
+  const totalToday = appointments.value.filter(a => (a.time || '').slice(0, 10) === todayStr).length
   const pending = appointments.value.filter(a => a.status === 'pending').length
   const completed = appointments.value.filter(a => a.status === 'completed').length
   const cancelled = appointments.value.filter(a => a.status === 'cancelled').length
   return { totalToday, pending, completed, cancelled }
 })
 
-function updateStatus(id, status) {
-  const a = appointments.value.find(x => x.id === id)
-  if (a) a.status = status
+async function updateStatus(id, status) {
+  try {
+    const res = await updateAppointmentStatus(id, status)
+    if (res.code === 200) {
+      message.success('状态更新成功')
+      const a = appointments.value.find(x => x.id === id)
+      if (a) a.status = status
+    } else {
+      message.error(res.message || '更新失败')
+    }
+  } catch {
+    message.error('更新失败')
+  }
 }
-
 
 </script>
 
@@ -55,7 +83,7 @@ function updateStatus(id, status) {
 
     <a-row :gutter="16" class="metrics">
       <a-col :span="6">
-        <a-card class="metric-card metric-today" :bordered="false">
+        <a-card class="metric-card metric-today" :bordered="false" @click="setMenu('list')">
           <div class="metric">
             <div class="metric-icon-wrap">
               <CalendarOutlined class="metric-icon" />
@@ -68,7 +96,7 @@ function updateStatus(id, status) {
         </a-card>
       </a-col>
       <a-col :span="6">
-        <a-card class="metric-card metric-pending" :bordered="false">
+        <a-card class="metric-card metric-pending" :bordered="false" @click="setMenu('list_pending')">
           <div class="metric">
             <div class="metric-icon-wrap">
               <ClockCircleOutlined class="metric-icon" />
@@ -81,7 +109,7 @@ function updateStatus(id, status) {
         </a-card>
       </a-col>
       <a-col :span="6">
-        <a-card class="metric-card metric-completed" :bordered="false">
+        <a-card class="metric-card metric-completed" :bordered="false" @click="setMenu('list_completed')">
           <div class="metric">
             <div class="metric-icon-wrap">
               <CheckCircleOutlined class="metric-icon" />
@@ -94,7 +122,7 @@ function updateStatus(id, status) {
         </a-card>
       </a-col>
       <a-col :span="6">
-        <a-card class="metric-card metric-cancelled" :bordered="false">
+        <a-card class="metric-card metric-cancelled" :bordered="false" @click="setMenu('list_cancelled')">
           <div class="metric">
             <div class="metric-icon-wrap">
               <CloseCircleOutlined class="metric-icon" />
