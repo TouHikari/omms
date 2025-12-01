@@ -116,11 +116,7 @@ const router = createRouter({
             key: 'sub_create',
             label: '新建病历',
             children: [
-              { key: 'create_history', label: '病史采集' },
-              { key: 'create_diagnosis', label: '诊断信息' },
-              { key: 'create_prescription', label: '处方药品' },
-              { key: 'create_exam_request', label: '检查申请' },
-              { key: 'create_lab_request', label: '检验申请' },
+              { key: 'create', label: '新建病历' },
             ]
           },
           {

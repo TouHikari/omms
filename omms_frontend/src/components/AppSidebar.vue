@@ -38,7 +38,12 @@ const state = reactive({
 
 const items = computed(() => {
   const sidebar = route.meta?.sidebar || []
-  const groups = sidebar.map(g => getItem(g.label, g.key, undefined, (g.children || []).map(c => getItem(c.label, c.key))))
+  const groups = sidebar.map(g => getItem(
+    g.label,
+    g.key,
+    undefined,
+    (g.children || []).filter(c => !c.hidden).map(c => getItem(c.label, c.key))
+  ))
   return groups
 })
 

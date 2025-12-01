@@ -17,6 +17,9 @@ const activeKey = ref('')
 
 function computeActiveFromRoute() {
   const menu = route.query.menu ? route.query.menu.toString() : ''
+  if (menu === 'none') {
+    return props.accordion ? '' : []
+  }
   if (!menu) return props.panels?.[0]?.key || ''
   const inverse = Object.entries(props.menuMap || {}).reduce((acc, [k, v]) => { acc[v] = k; return acc }, {})
   const byMap = inverse[menu]
@@ -35,12 +38,16 @@ watch(() => route.query.menu, () => props.menuSync && syncActive(), { immediate:
 watch(() => route.path, () => props.menuSync && syncActive())
 
 function onChange(key) {
-  const k = Array.isArray(key) ? key[0] : key
-  activeKey.value = k
-  if (props.menuSync) {
-    const menuKey = props.menuMap?.[k] || k
-    router.replace({ path: route.path, query: { ...route.query, menu: menuKey } })
+  const isArray = Array.isArray(key)
+  const k = isArray ? key[0] : key
+  activeKey.value = isArray ? key : (k ?? '')
+  if (!props.menuSync) return
+  if (isArray ? (key.length === 0) : (k === undefined || k === null || k === '')) {
+    router.replace({ path: route.path, query: { ...route.query, menu: 'none' } })
+    return
   }
+  const menuKey = props.menuMap?.[k] || k
+  router.replace({ path: route.path, query: { ...route.query, menu: menuKey } })
 }
 </script>
 

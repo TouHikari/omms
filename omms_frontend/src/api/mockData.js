@@ -59,3 +59,14 @@ export const appointments = [
   { id: 'R-20250102-005', patient: '周二', department: '皮肤科', doctor: '张医生', time: '2025-01-02 15:00', status: 'completed', symptom: '皮疹瘙痒，反复发作' },
   { id: 'R-20250103-006', patient: '吴三', department: '内科', doctor: '李医生', time: '2025-01-03 09:30', status: 'pending', symptom: '头晕乏力1周' },
 ];
+
+export const records = [
+  { id: 'MR-20250101-001', patient: '王小明', department: '内科', doctor: '张医生', createdAt: '2025-01-01 09:20', status: 'draft', hasLab: true, hasImaging: false, chiefComplaint: '发热咳嗽3天', diagnosis: '上呼吸道感染', prescriptions: ['对乙酰氨基酚片'], labs: ['血常规'], imaging: [] },
+  { id: 'MR-20250101-002', patient: '李小红', department: '外科', doctor: '李医生', createdAt: '2025-01-01 11:10', status: 'finalized', hasLab: false, hasImaging: true, chiefComplaint: '腹痛1天', diagnosis: '急性胃肠炎', prescriptions: ['蒙脱石散'], labs: [], imaging: ['腹部超声'] },
+  { id: 'MR-20250101-003', patient: '赵大海', department: '儿科', doctor: '王医生', createdAt: '2025-01-01 15:00', status: 'archived', hasLab: false, hasImaging: false, chiefComplaint: '咳嗽2天', diagnosis: '上呼吸道感染', prescriptions: ['止咳糖浆'], labs: [], imaging: [] },
+  { id: 'MR-20250102-004', patient: '孙一', department: '骨科', doctor: '赵医生', createdAt: '2025-01-02 16:40', status: 'draft', hasLab: false, hasImaging: true, chiefComplaint: '右臂疼痛', diagnosis: '肱骨骨折待查', prescriptions: [], labs: [], imaging: ['右臂X光'] },
+  { id: 'MR-20250102-005', patient: '周二', department: '皮肤科', doctor: '张医生', createdAt: '2025-01-02 17:30', status: 'finalized', hasLab: true, hasImaging: false, chiefComplaint: '皮疹瘙痒', diagnosis: '过敏性皮炎', prescriptions: ['氯雷他定'], labs: ['过敏原筛查'], imaging: [] },
+  { id: 'MR-20250103-006', patient: '吴三', department: '内科', doctor: '李医生', createdAt: '2025-01-03 10:00', status: 'draft', hasLab: false, hasImaging: false, chiefComplaint: '头晕乏力1周', diagnosis: '贫血待查', prescriptions: [], labs: ['血红蛋白'], imaging: [] },
+  { id: 'MR-20250103-007', patient: '王小明', department: '内科', doctor: '张医生', createdAt: '2025-01-03 10:40', status: 'finalized', hasLab: true, hasImaging: false, chiefComplaint: '复诊', diagnosis: '上呼吸道感染恢复期', prescriptions: [], labs: ['复查血常规'], imaging: [] },
+  { id: 'MR-20250104-008', patient: '李小红', department: '外科', doctor: '李医生', createdAt: '2025-01-04 09:10', status: 'archived', hasLab: false, hasImaging: true, chiefComplaint: '复诊', diagnosis: '胃肠炎恢复', prescriptions: [], labs: [], imaging: ['复查腹部超声'] },
+];
