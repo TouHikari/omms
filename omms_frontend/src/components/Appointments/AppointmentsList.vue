@@ -21,18 +21,30 @@ const columns = [
 ]
 
 const statusFilter = ref('all')
+const currentPage = ref(1)
+const pageSize = ref(10)
 
 watch(() => props.currentMenu, (m) => {
-  if (m === 'list_pending') statusFilter.value = 'pending'
-  else if (m === 'list_completed') statusFilter.value = 'completed'
-  else if (m === 'list_cancelled') statusFilter.value = 'cancelled'
-  else statusFilter.value = 'all'
+  const key = (m || '')
+  if (key.startsWith('list_')) {
+    if (key === 'list_pending') statusFilter.value = 'pending'
+    else if (key === 'list_completed') statusFilter.value = 'completed'
+    else if (key === 'list_cancelled') statusFilter.value = 'cancelled'
+    else statusFilter.value = 'all'
+  }
 }, { immediate: true })
 
 watch(statusFilter, (s) => {
   const targetMenu = s === 'all' ? 'list_all' : `list_${s}`
-  if (targetMenu !== props.currentMenu) props.setMenu(targetMenu)
+  const key = (props.currentMenu || '')
+  if (key.startsWith('list_') && targetMenu !== props.currentMenu) props.setMenu(targetMenu)
+  currentPage.value = 1
 })
+
+function onTableChange(pagination) {
+  currentPage.value = pagination.current
+  pageSize.value = pagination.pageSize
+}
 
 const filteredAppointments = computed(() => {
   const s = statusFilter.value
@@ -65,10 +77,19 @@ function showDetail(record) {
   detailRecord.value = record
   detailVisible.value = true
 }
+
+async function onUpdateStatus(record, status) {
+  const prev = record.status
+  record.status = status
+  const result = await props.updateStatus(record.id, status)
+  if (result === false) {
+    record.status = prev
+  }
+}
 </script>
 
 <template>
-  <a-card title="预约列表">
+  <a-card>
     <a-space style="margin-bottom: 12px; width: 100%; justify-content: space-between">
       <a-radio-group v-model:value="statusFilter" button-style="solid">
         <a-radio-button value="all">全部</a-radio-button>
@@ -78,7 +99,13 @@ function showDetail(record) {
       </a-radio-group>
       <a-button type="primary" @click="setMenu('create')">新建预约</a-button>
     </a-space>
-    <a-table :columns="columns" :data-source="filteredAppointments" :pagination="{ pageSize: 5 }" rowKey="id">
+    <a-table
+      :columns="columns"
+      :data-source="filteredAppointments"
+      :pagination="{ current: currentPage, pageSize: pageSize, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'] }"
+      rowKey="id"
+      @change="onTableChange"
+    >
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'status'">
           <a-tag :color="{ pending: 'blue', completed: 'green', cancelled: 'red' }[record.status]">
@@ -92,10 +119,10 @@ function showDetail(record) {
               <a-button type="link">更改状态</a-button>
               <template #overlay>
                 <a-menu>
-                  <a-menu-item key="pending" @click="props.updateStatus(record.id, 'pending')">置为待就诊</a-menu-item>
-                  <a-menu-item key="completed" @click="props.updateStatus(record.id, 'completed')">置为已完成</a-menu-item>
+                  <a-menu-item key="pending" @click="onUpdateStatus(record, 'pending')">置为待就诊</a-menu-item>
+                  <a-menu-item key="completed" @click="onUpdateStatus(record, 'completed')">置为已完成</a-menu-item>
                   <a-menu-item key="cancelled">
-                    <a-popconfirm title="确认取消该预约？" ok-text="确认" cancel-text="取消" @confirm="props.updateStatus(record.id, 'cancelled')">
+                    <a-popconfirm title="确认取消该预约？" ok-text="确认" cancel-text="取消" @confirm="onUpdateStatus(record, 'cancelled')">
                       <span>置为已取消</span>
                     </a-popconfirm>
                   </a-menu-item>
@@ -131,6 +158,7 @@ function showDetail(record) {
       <a-descriptions-item label="科室">{{ detailRecord?.department }}</a-descriptions-item>
       <a-descriptions-item label="医生">{{ detailRecord?.doctor }}</a-descriptions-item>
       <a-descriptions-item label="时间" :span="2">{{ detailRecord?.time }}</a-descriptions-item>
+      <a-descriptions-item label="症状描述" :span="2">{{ detailRecord?.symptom || '-' }}</a-descriptions-item>
     </a-descriptions>
   </a-modal>
 </template>

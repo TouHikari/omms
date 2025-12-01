@@ -90,13 +90,6 @@ const router = createRouter({
               { key: 'schedules_roster', label: '医生班表' },
             ],
           },
-          {
-            key: 'sub_departments',
-            label: '科室设置',
-            children: [
-              { key: 'departments_list', label: '科室列表' },
-            ],
-          },
         ],
       },
     },

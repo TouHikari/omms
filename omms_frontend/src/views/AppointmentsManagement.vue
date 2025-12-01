@@ -6,7 +6,6 @@ import { message } from 'ant-design-vue'
 import AppointmentsList from '@/components/Appointments/AppointmentsList.vue'
 import AppointmentsCreate from '@/components/Appointments/AppointmentsCreate.vue'
 import AppointmentsSchedules from '@/components/Appointments/AppointmentsSchedules.vue'
-import AppointmentsDepartments from '@/components/Appointments/AppointmentsDepartments.vue'
 import { getDepartments, getAllDoctors, getAppointments, updateAppointmentStatus } from '@/api/appointment'
 
 const route = useRoute()
@@ -48,6 +47,23 @@ onMounted(() => {
   loadData()
 })
 
+const refreshAppointments = async () => {
+  try {
+    const apptRes = await getAppointments()
+    if (apptRes.code === 200) {
+      appointments.value = apptRes.data
+    }
+  } catch {
+    // ignore
+  }
+}
+
+watch(currentMenu, (m) => {
+  if ((m || '').startsWith('list')) {
+    refreshAppointments()
+  }
+})
+
 const metrics = computed(() => {
   const todayStr = new Date().toISOString().split('T')[0]
   const totalToday = appointments.value.filter(a => (a.time || '').slice(0, 10) === todayStr).length
@@ -64,18 +80,21 @@ async function updateStatus(id, status) {
       message.success('状态更新成功')
       const a = appointments.value.find(x => x.id === id)
       if (a) a.status = status
+      return true
     } else {
       message.error(res.message || '更新失败')
+      return false
     }
   } catch {
     message.error('更新失败')
+    return false
   }
 }
 
 const activePanel = ref(currentGroup.value)
 const onCollapseChange = (key) => {
   const k = Array.isArray(key) ? key[0] : key
-  const groupToMenu = { list: 'list_all', create: 'create', schedules: 'schedules_roster', departments: 'departments_list' }
+  const groupToMenu = { list: 'list_all', create: 'create', schedules: 'schedules_roster' }
   const menuKey = groupToMenu[k] || k
   if (menuKey && menuKey !== currentMenu.value) setMenu(menuKey)
 }
@@ -158,9 +177,6 @@ watch(currentGroup, (g) => {
         </a-collapse-panel>
         <a-collapse-panel key="schedules" header="医生排班">
           <AppointmentsSchedules :doctors="doctors" />
-        </a-collapse-panel>
-        <a-collapse-panel key="departments" header="科室设置">
-          <AppointmentsDepartments :departments="departments" />
         </a-collapse-panel>
       </a-collapse>
     </section>

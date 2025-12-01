@@ -15,9 +15,10 @@ const router = useRouter()
 const route = useRoute()
 
 // Define props to avoid warnings, though we might not use them if we fetch data internally
-defineProps({
+const props = defineProps({
   departments: { type: Array, default: () => [] },
   doctors: { type: Array, default: () => [] },
+  refreshAppointments: { type: Function, default: undefined },
 })
 
 const currentStep = ref(0)
@@ -126,6 +127,9 @@ const onSubmit = async () => {
     if (res.code === 200) {
       appointmentResult.value = res.data
       message.success('预约成功')
+      if (props.refreshAppointments) {
+        props.refreshAppointments()
+      }
       currentStep.value++ // Move to success step (or just show result)
     }
   } catch {
@@ -142,7 +146,7 @@ const prevStep = () => {
 }
 
 const goToAppointments = () => {
-  router.push({ query: { ...route.query, menu: 'list' } })
+  router.push({ query: { ...route.query, menu: 'list_pending' } })
 }
 
 const reset = () => {

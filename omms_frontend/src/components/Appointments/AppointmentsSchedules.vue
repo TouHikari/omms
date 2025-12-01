@@ -5,7 +5,7 @@ defineProps({
 </script>
 
 <template>
-  <a-card title="医生排班">
+  <a-card>
     <a-table
       :data-source="doctors.map(d => ({ doctor: d, monday: '可约', tuesday: '可约', wednesday: '休', thursday: '可约', friday: '可约' }))"
       :columns="[
@@ -18,6 +18,7 @@ defineProps({
       ]"
       :pagination="false"
       rowKey="doctor.id"
+      bordered
     >
       <template #bodyCell="{ column, text }">
         <template v-if="column.key === 'doctor'">

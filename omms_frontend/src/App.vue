@@ -4,6 +4,7 @@ import { computed } from 'vue';
 import AppHeader from '@/components/AppHeader.vue';
 import AppFooter from '@/components/AppFooter.vue';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
+import zhCN from 'ant-design-vue/es/locale/zh_CN'
 
 const route = useRoute();
 const layoutMap = { default: DefaultLayout, blank: 'div' };
@@ -18,16 +19,18 @@ const isBlankLayout = computed(() => rawLayout.value === 'blank');
 </script>
 
 <template>
-  <div v-if="!isBlankLayout" class="app-container">
-    <AppHeader />
-    <component :is="CurrentLayout">
+  <a-config-provider :locale="zhCN">
+    <div v-if="!isBlankLayout" class="app-container">
+      <AppHeader />
+      <component :is="CurrentLayout">
+        <RouterView />
+      </component>
+      <AppFooter />
+    </div>
+    <component v-else :is="CurrentLayout">
       <RouterView />
     </component>
-    <AppFooter />
-  </div>
-  <component v-else :is="CurrentLayout">
-    <RouterView />
-  </component>
+  </a-config-provider>
 </template>
 
 <style lang="scss">
