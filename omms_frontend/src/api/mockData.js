@@ -99,3 +99,45 @@ export const recordTemplates = [
   { id: 2, name: '外科术后随访模板', scope: '科室', fields: ['术后天数', '伤口情况', '复查项目', '诊断', '处方'], defaults: { chiefComplaint: '术后复诊随访', diagnosis: '术后恢复期', prescriptions: ['布洛芬缓释胶囊'], labs: [], imaging: ['腹部超声'] } },
   { id: 3, name: '通用简易模板', scope: '通用', fields: ['主诉', '诊断'], defaults: { chiefComplaint: '主诉待填写', diagnosis: '待诊断', prescriptions: [], labs: [], imaging: [] } },
 ]
+
+// Pharmacy dummy data
+export const medicines = [
+  { id: 101, name: '对乙酰氨基酚片', specification: '0.5g*20片/盒', dosage_form: '片剂', manufacturer: '华康制药', unit: '盒', price: 12.0, warningStock: 50, currentStock: 120 },
+  { id: 102, name: '布洛芬缓释胶囊', specification: '0.3g*10粒/盒', dosage_form: '胶囊', manufacturer: '景德制药', unit: '盒', price: 28.0, warningStock: 40, currentStock: 35 },
+  { id: 103, name: '氯雷他定片', specification: '10mg*12片/盒', dosage_form: '片剂', manufacturer: '苏南制药', unit: '盒', price: 18.0, warningStock: 30, currentStock: 80 },
+  { id: 104, name: '阿莫西林胶囊', specification: '0.25g*24粒/盒', dosage_form: '胶囊', manufacturer: '华东制药', unit: '盒', price: 16.0, warningStock: 60, currentStock: 60 },
+  { id: 105, name: '蒙脱石散', specification: '3g*10袋/盒', dosage_form: '散剂', manufacturer: '上药集团', unit: '盒', price: 22.0, warningStock: 30, currentStock: 18 },
+  { id: 106, name: '头孢克肟片', specification: '100mg*10片/盒', dosage_form: '片剂', manufacturer: '齐鲁制药', unit: '盒', price: 35.0, warningStock: 25, currentStock: 25 },
+]
+
+export const inventoryBatches = [
+  { id: 1001, medicineId: 101, batchNo: 'B20241215-01', quantity: 50, receivedAt: '2024-12-15', expiryDate: '2025-06-30' },
+  { id: 1002, medicineId: 101, batchNo: 'B20250110-02', quantity: 70, receivedAt: '2025-01-10', expiryDate: '2025-11-30' },
+  { id: 1003, medicineId: 102, batchNo: 'B20241220-01', quantity: 35, receivedAt: '2024-12-20', expiryDate: '2025-02-15' },
+  { id: 1004, medicineId: 105, batchNo: 'B20241201-03', quantity: 18, receivedAt: '2024-12-01', expiryDate: '2025-01-20' },
+  { id: 1005, medicineId: 106, batchNo: 'B20250105-01', quantity: 25, receivedAt: '2025-01-05', expiryDate: '2025-08-31' },
+]
+
+export const inventoryLogs = [
+  { id: 2001, type: 'in', medicineId: 101, quantity: 50, time: '2024-12-15 09:30', note: '新采购入库，批次 B20241215-01' },
+  { id: 2002, type: 'out', medicineId: 101, quantity: 5, time: '2025-01-01 10:20', note: '处方发药 RX-20250101-001' },
+  { id: 2003, type: 'in', medicineId: 102, quantity: 35, time: '2024-12-20 14:00', note: '新采购入库，批次 B20241220-01' },
+  { id: 2004, type: 'out', medicineId: 105, quantity: 2, time: '2025-01-02 11:10', note: '处方发药 RX-20250102-005' },
+]
+
+export const pharmacyPrescriptions = [
+  { id: 'RX-20250101-001', patient: '王小明', department: '内科', doctor: '张医生', createdAt: '2025-01-01 09:40', status: 'pending', items: [ { medicineId: 101, name: '对乙酰氨基酚片', qty: 1, unit: '盒', price: 12.0 } ] },
+  { id: 'RX-20250102-005', patient: '周二', department: '皮肤科', doctor: '张医生', createdAt: '2025-01-02 17:50', status: 'approved', items: [ { medicineId: 105, name: '蒙脱石散', qty: 2, unit: '盒', price: 22.0 } ] },
+  { id: 'RX-20250103-009', patient: '吴三', department: '内科', doctor: '李医生', createdAt: '2025-01-03 10:20', status: 'dispensed', items: [ { medicineId: 102, name: '布洛芬缓释胶囊', qty: 1, unit: '盒', price: 28.0 } ] },
+  { id: 'RX-20250103-010', patient: '王小明', department: '内科', doctor: '张医生', createdAt: '2025-01-03 11:00', status: 'pending', items: [ { medicineId: 106, name: '头孢克肟片', qty: 1, unit: '盒', price: 35.0 } ] },
+]
+
+export const suppliers = [
+  { id: 1, name: '华康药业', contact: '刘女士', phone: '010-12345678', address: '北京市昌平区科技园' },
+  { id: 2, name: '齐鲁制药经销', contact: '王先生', phone: '010-87654321', address: '北京市海淀区中关村' },
+]
+
+export const supplierOrders = [
+  { id: 'PO-20250101-001', supplierId: 1, createdAt: '2025-01-01 13:20', status: 'pending', amount: 3200.00, items: [ { medicineId: 101, name: '对乙酰氨基酚片', qty: 100, unit: '盒' } ] },
+  { id: 'PO-20250102-003', supplierId: 2, createdAt: '2025-01-02 15:00', status: 'completed', amount: 5600.00, items: [ { medicineId: 106, name: '头孢克肟片', qty: 200, unit: '盒' } ] },
+]
