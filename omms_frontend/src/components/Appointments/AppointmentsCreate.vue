@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { message } from 'ant-design-vue'
 import {
   SolutionOutlined,
@@ -35,6 +35,19 @@ const selectedDoctor = ref(null)
 const selectedSchedule = ref(null)
 const symptomDesc = ref('')
 const appointmentResult = ref(null)
+
+const containerRef = ref(null)
+const containerWidth = ref(0)
+let ro
+onMounted(() => {
+  ro = new ResizeObserver((entries) => {
+    const rect = entries[0]?.contentRect
+    if (rect) containerWidth.value = rect.width
+  })
+  if (containerRef.value) ro.observe(containerRef.value)
+})
+onUnmounted(() => { if (ro) ro.disconnect() })
+const isSmall = computed(() => containerWidth.value <= 768)
 
 // Steps configuration
 const steps = [
@@ -160,9 +173,9 @@ const reset = () => {
 </script>
 
 <template>
-  <div class="appointments-create">
+  <div class="appointments-create" ref="containerRef">
     <a-card :bordered="false" class="main-card">
-      <a-steps :current="currentStep" class="steps-bar">
+      <a-steps :current="currentStep" class="steps-bar" :direction="isSmall ? 'vertical' : 'horizontal'">
         <a-step v-for="item in steps" :key="item.title" :title="item.title">
           <template #icon>
             <component :is="item.icon" />
@@ -261,7 +274,7 @@ const reset = () => {
 
         <!-- Step 3: Confirmation -->
         <div v-if="currentStep === 3">
-           <div class="step-header">
+          <div class="step-header">
             <a-button @click="prevStep" type="text"> <LeftOutlined /> 返回</a-button>
             <span class="step-title">确认预约信息</span>
           </div>
@@ -310,10 +323,15 @@ const reset = () => {
 </template>
 
 <style scoped lang="scss">
+@use '@/assets/_variables.scss' as *;
 //.appointments-create {
 //  // max-width: 1000px;
 //  margin: 0 auto;
 //}
+
+.appointments-create {
+  container-type: inline-size;
+}
 
 .steps-bar {
   margin-bottom: 40px;
@@ -441,5 +459,29 @@ const reset = () => {
   padding: 40px;
   color: #999;
   font-size: 16px;
+}
+.step-content {
+  padding: 0 16px;
+}
+
+@container (max-width: $breakpoint_md) {
+  .steps-bar {
+    margin-bottom: 24px;
+    padding: 0 16px;
+  }
+  .grid-container {
+    gap: 16px;
+    padding: 8px;
+  }
+  .selection-card :deep(.ant-card-body) {
+    padding: 12px;
+  }
+}
+
+@container (max-width: $breakpoint_sm) {
+  .confirm-container {
+    max-width: 100%;
+    padding: 0 8px;
+  }
 }
 </style>

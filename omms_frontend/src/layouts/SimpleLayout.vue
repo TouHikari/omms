@@ -25,4 +25,10 @@
   background-color: $content-bg-color;
   overflow-y: scroll;
 }
+
+@media (max-width: $breakpoint-sm) {
+  .content-container {
+    padding: 16px;
+  }
+}
 </style>

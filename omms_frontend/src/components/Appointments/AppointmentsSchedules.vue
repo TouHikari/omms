@@ -17,6 +17,8 @@ defineProps({
         { title: '周五', dataIndex: 'friday', key: 'friday' },
       ]"
       :pagination="false"
+      :scroll="{ x: 720 }"
+      size="small"
       rowKey="doctor.id"
       bordered
     >
@@ -30,4 +32,15 @@ defineProps({
 </template>
 
 <style scoped lang="scss">
+@use '@/assets/_variables.scss' as *;
+
+:deep(.ant-card) {
+  container-type: inline-size;
+}
+
+@container (max-width: $breakpoint_md) {
+  :deep(.ant-card-body) {
+    padding: 12px;
+  }
+}
 </style>

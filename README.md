@@ -7,13 +7,13 @@ OMMS（Online Medical Management System）是一个面向医疗机构与患者�
 ```
 omms/
 ├─ docs/            # 项目相关文档
-├─ omms_backend/    # 后端 Java 21 项目
+├─ omms_backend/    # 后端 Python (FastAPI) 项目
 └─ omms_frontend/   # 前端 Vue 3 项目
 ```
 
 ## 技术栈（规划）
 
-- 后端：Java 17+/Spring Boot 3.2.x、Spring Security 6.x、Spring Data JPA/MyBatis、JWT、MySQL 8.0
+- 后端：Python 3.10+/FastAPI 0.109+、SQLAlchemy 2.x、Pydantic 2.x、Alembic、JWT、MySQL 5.5.62
 - 前端：Vue 3、Ant Design Vue、Vue Router、Axios、Day.js、ECharts
 
 ## 核心功能范围（概要）
@@ -38,7 +38,7 @@ omms/
 
 ## API 规范（v1 摘要）
 
-- 路径前缀：`/api/v1`，统一响应：`{ code, message, data }`
+- 路径前缀：无（直接访问），统一响应：`{ code, message, data }`
 - 认证：`Authorization: Bearer <jwt>`；按角色/作用域校验
 - 幂等与重试：预约携带 `Idempotency-Key`；支付回调签名校验与幂等
 - 分页与过滤：`page,size,sort` 与统一时间范围参数
@@ -64,7 +64,7 @@ omms/
 
 ## 部署与运维（摘要）
 
-- 环境：`dev/test/prod`，MVP 单机（后端+MySQL）
+- 环境：`dev/test/prod`，MVP 单机（后端+MySQL 5.5.62）
 - CI/CD：合并触发构建与测试；监控与告警（耗时、错误率等）
 - 日志策略：应用日志 ≥30 天；审计日志 ≥180 天；敏感字段脱敏
 
@@ -82,28 +82,23 @@ omms/
 ## 快速开始
 
 前置环境：
-- 后端：`Java 21`、`Maven 3.9+`
+- 后端：`Python 3.10+`、`MySQL 5.5.62`
 - 前端：`Node 20.19+ 或 22.12+`
 
-后端（当前为原型程序）
-- 构建：在 `omms_backend/omms` 执行 `mvn package`
-- 运行：在仓库根目录执行
-
-```sh
-java -cp omms_backend/omms/target/omms-1.0-SNAPSHOT.jar com.touhikari.omms.Main
-```
+后端
+- 详见 [`omms_backend/README.md`](omms_backend/README.md)（包含虚拟环境创建、依赖安装、数据库迁移与启动命令）
 
 前端
-- 详见 `omms_frontend/README.md`（包含安装、开发、构建、测试与 lint 命令）
+- 详见 [`omms_frontend/README.md`](omms_frontend/README.md)（包含安装、开发、构建、测试与 lint 命令）
 
 ## 约定与规范
 
-- 提交消息：遵循 `docs/Git 提交消息规范.md`
+- 提交消息：遵循 [`docs/Git 提交消息规范.md`](<docs/Git 提交消息规范.md>)
 - 安全：严禁将密钥、证书、数据库账号等敏感信息提交到仓库
 
 ## 参考文档
 
-- 项目选题与范围：`docs/选题.md`
-- 项目开发计划：`docs/项目开发计划/项目开发计划.md`
+- 项目选题与范围：[`docs/选题.md`](docs/选题.md)
+- 项目开发计划：[`docs/项目开发计划/项目开发计划.md`](docs/项目开发计划/项目开发计划.md)
 
-> 注：本 README 基于 `docs/选题.md` 的系统规划进行整理，后续将随着后端 Spring Boot 与前端业务功能的落地持续更新。
+> 注：本 README 基于 [`docs/选题.md`](docs/选题.md) 的系统规划进行整理，后续将随着后端 FastAPI 与前端业务功能的落地持续更新。
