@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps({
   currentMenu: { type: String, required: true },
@@ -57,6 +57,12 @@ const filteredAppointments = computed(() => {
 const detailVisible = ref(false)
 const detailRecord = ref(null)
 
+const viewportWidth = ref(window.innerWidth)
+function onResize() { viewportWidth.value = window.innerWidth }
+onMounted(() => { window.addEventListener('resize', onResize) })
+onUnmounted(() => { window.removeEventListener('resize', onResize) })
+const modalWidth = computed(() => viewportWidth.value <= 768 ? '90%' : '720px')
+
 const patientsByName = {
   '王小明': { patient_id: 1001, user_id: 5001, name: '王小明', gender: 1, birthday: '1990-04-12', id_card: '110101199004120011', address: '北京市朝阳区和平里', emergency_contact: '王女士', emergency_phone: '13800000001' },
   '李小红': { patient_id: 1002, user_id: 5002, name: '李小红', gender: 0, birthday: '1992-08-22', id_card: '110101199208220022', address: '北京市海淀区西北旺', emergency_contact: '李先生', emergency_phone: '13800000002' },
@@ -90,7 +96,7 @@ async function onUpdateStatus(record, status) {
 
 <template>
   <a-card>
-    <a-space style="margin-bottom: 12px; width: 100%; justify-content: space-between">
+    <a-space class="list-toolbar">
       <div>
         <span style="margin-bottom: 4px">筛选方式：</span>
         <a-radio-group v-model:value="statusFilter" button-style="solid">
@@ -106,6 +112,8 @@ async function onUpdateStatus(record, status) {
       :columns="columns"
       :data-source="filteredAppointments"
       :pagination="{ current: currentPage, pageSize: pageSize, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'] }"
+      :scroll="{ x: 860 }"
+      size="small"
       rowKey="id"
       @change="onTableChange"
     >
@@ -138,7 +146,7 @@ async function onUpdateStatus(record, status) {
     </a-table>
   </a-card>
 
-  <a-modal v-model:open="detailVisible" title="患者详情" :footer="null" width="720px">
+  <a-modal v-model:open="detailVisible" title="患者详情" :footer="null" :width="modalWidth">
     <a-descriptions :column="2" bordered size="small">
       <a-descriptions-item label="患者ID">{{ currentPatient?.patient_id }}</a-descriptions-item>
       <a-descriptions-item label="用户ID">{{ currentPatient?.user_id }}</a-descriptions-item>
@@ -166,4 +174,39 @@ async function onUpdateStatus(record, status) {
   </a-modal>
 </template>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+@use '@/assets/_variables.scss' as *;
+
+.list-toolbar {
+  margin-bottom: 12px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+:deep(.ant-card) {
+  container-type: inline-size;
+}
+
+@container (max-width: $breakpoint_md) {
+  .list-toolbar {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .list-toolbar > :first-child {
+    flex: 1 1 100%;
+  }
+  .list-toolbar > :last-child {
+    flex: 0 0 auto;
+    align-self: flex-start;
+    margin-left: auto;
+  }
+}
+
+@container (max-width: $breakpoint_sm) {
+  :deep(.ant-radio-group) {
+    width: 100%;
+  }
+}
+</style>

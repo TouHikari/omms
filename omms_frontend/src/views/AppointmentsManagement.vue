@@ -105,64 +105,60 @@ const panelMenuMap = { list: 'list_all', create: 'create', schedules: 'schedules
 <template>
   <PageLayout title="预约管理" desc="在线预约、医生排班与状态跟踪" :panels="pagePanels" :menu-map="panelMenuMap">
     <template #metrics>
-      <a-row :gutter="16">
-        <a-col :span="6">
-          <a-card class="metric-card metric-today" :bordered="false" @click="setMenu('list_all')">
-            <div class="metric">
-              <div class="metric-icon-wrap">
-                <CalendarOutlined class="metric-icon" />
-              </div>
-              <div class="metric-content">
-                <div class="metric-label">今日预约</div>
-                <div class="metric-value">{{ metrics.totalToday }}</div>
-              </div>
+      <div class="metrics-grid">
+        <a-card class="metric-card metric-today" :bordered="false" @click="setMenu('list_all')">
+          <div class="metric">
+            <div class="metric-icon-wrap">
+              <CalendarOutlined class="metric-icon" />
             </div>
-          </a-card>
-        </a-col>
-        <a-col :span="6">
-          <a-card class="metric-card metric-pending" :bordered="false" @click="setMenu('list_pending')">
-            <div class="metric">
-              <div class="metric-icon-wrap">
-                <ClockCircleOutlined class="metric-icon" />
-              </div>
-              <div class="metric-content">
-                <div class="metric-label">待就诊</div>
-                <div class="metric-value">{{ metrics.pending }}</div>
-              </div>
+            <div class="metric-content">
+              <div class="metric-label">今日预约</div>
+              <div class="metric-value">{{ metrics.totalToday }}</div>
             </div>
-          </a-card>
-        </a-col>
-        <a-col :span="6">
-          <a-card class="metric-card metric-completed" :bordered="false" @click="setMenu('list_completed')">
-            <div class="metric">
-              <div class="metric-icon-wrap">
-                <CheckCircleOutlined class="metric-icon" />
-              </div>
-              <div class="metric-content">
-                <div class="metric-label">已完成</div>
-                <div class="metric-value">{{ metrics.completed }}</div>
-              </div>
+          </div>
+        </a-card>
+
+        <a-card class="metric-card metric-pending" :bordered="false" @click="setMenu('list_pending')">
+          <div class="metric">
+            <div class="metric-icon-wrap">
+              <ClockCircleOutlined class="metric-icon" />
             </div>
-          </a-card>
-        </a-col>
-        <a-col :span="6">
-          <a-card class="metric-card metric-cancelled" :bordered="false" @click="setMenu('list_cancelled')">
-            <div class="metric">
-              <div class="metric-icon-wrap">
-                <CloseCircleOutlined class="metric-icon" />
-              </div>
-              <div class="metric-content">
-                <div class="metric-label">已取消</div>
-                <div class="metric-value">{{ metrics.cancelled }}</div>
-              </div>
+            <div class="metric-content">
+              <div class="metric-label">待就诊</div>
+              <div class="metric-value">{{ metrics.pending }}</div>
             </div>
-          </a-card>
-        </a-col>
-      </a-row>
+          </div>
+        </a-card>
+
+        <a-card class="metric-card metric-completed" :bordered="false" @click="setMenu('list_completed')">
+          <div class="metric">
+            <div class="metric-icon-wrap">
+              <CheckCircleOutlined class="metric-icon" />
+            </div>
+            <div class="metric-content">
+              <div class="metric-label">已完成</div>
+              <div class="metric-value">{{ metrics.completed }}</div>
+            </div>
+          </div>
+        </a-card>
+
+        <a-card class="metric-card metric-cancelled" :bordered="false" @click="setMenu('list_cancelled')">
+          <div class="metric">
+            <div class="metric-icon-wrap">
+              <CloseCircleOutlined class="metric-icon" />
+            </div>
+            <div class="metric-content">
+              <div class="metric-label">已取消</div>
+              <div class="metric-value">{{ metrics.cancelled }}</div>
+            </div>
+          </div>
+        </a-card>
+      </div>
     </template>
 
     <template #panel-list>
-      <AppointmentsList :current-menu="currentMenu" :departments="departments" :doctors="doctors" :appointments="appointments" :set-menu="setMenu" :update-status="updateStatus" />
+      <AppointmentsList :current-menu="currentMenu" :departments="departments" :doctors="doctors"
+        :appointments="appointments" :set-menu="setMenu" :update-status="updateStatus" />
     </template>
 
     <template #panel-create>
@@ -245,4 +241,10 @@ const panelMenuMap = { list: 'list_all', create: 'create', schedules: 'schedules
   font-weight: 700;
 }
 
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
 </style>
