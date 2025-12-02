@@ -45,4 +45,21 @@ const goHome = () => router.replace('/')
 .not-found-actions {
   margin-top: 16px;
 }
+
+@media (max-width: $breakpoint-md) {
+  .not-found-title {
+    font-size: 80px;
+  }
+}
+
+@media (max-width: $breakpoint-xs) {
+  .not-found-title {
+    font-size: 60px;
+  }
+  .not-found-message {
+    font-size: 16px;
+    padding: 0 16px;
+    text-align: center;
+  }
+}
 </style>

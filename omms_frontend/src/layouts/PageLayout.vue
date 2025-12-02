@@ -90,4 +90,13 @@ function onChange(key) {
   flex-direction: column;
   gap: 12px;
 }
+
+@media (max-width: $breakpoint-sm) {
+  .page-layout {
+    gap: 8px;
+  }
+  .content {
+    gap: 8px;
+  }
+}
 </style>

@@ -4,10 +4,15 @@
       <i class="brand-icon">
         <img src="/favicon.png" draggable="false" alt="logo" style="height: 100%; width: 100%;" />
       </i>
-      <span class="brand-name">在线医疗管理系统 OMMS</span>
+      <span class="brand-name">
+        <span class="brand-name-primary">在线医疗管理系统 </span>
+        <span class="brand-name-secondary">OMMS</span></span>
     </div>
 
-    <a-menu mode="horizontal" v-model:selectedKeys="selectedMenuKeys" :style="{ flex: 1, minWidth: '480px' }" @select="onMenuSelect">
+    <a-menu class="nav" mode="horizontal" v-model:selectedKeys="selectedMenuKeys" @select="onMenuSelect">
+      <template #overflowedIndicator>
+        <EllipsisOutlined />
+      </template>
       <a-menu-item key="dashboard">数据看板</a-menu-item>
       <a-menu-item key="appointments">预约管理</a-menu-item>
       <a-menu-item key="records">病历管理</a-menu-item>
@@ -18,14 +23,26 @@
     </a-menu>
 
     <div class="actions">
-      <a-input-search v-model:value="searchValue" class="search" placeholder="搜索预约/病历/处方..."
-        :style="{ width: '280px' }" />
+      <div class="mobile-menu-trigger" role="button" @click="mobileMenuOpen = true">
+        <MenuOutlined class="action-icon" />
+      </div>
+      <div class="search-trigger">
+        <a-popover placement="bottomRight">
+          <template #content>
+            <a-input-search v-model:value="searchValue" size="middle" placeholder="搜索预约/病历/处方..." style="width: 260px;" />
+          </template>
+          <a-button type="text" class="action-icon" aria-label="搜索">
+            <SearchOutlined />
+          </a-button>
+        </a-popover>
+      </div>
+      <a-input-search v-model:value="searchValue" class="search" placeholder="搜索预约/病历/处方..." />
 
       <a-dropdown>
         <div class="user" role="button">
-          <a-avatar size="small" icon="" />
+          <a-avatar size="small" style="color: #f56a00; background-color: #fde3cf">A</a-avatar>
           <span class="user-name">管理员</span>
-          <DownOutlined />
+          <DownOutlined style="font-size: 10px;" />
         </div>
         <template #overlay>
           <a-menu>
@@ -47,6 +64,18 @@
       </a-dropdown>
     </div>
   </div>
+
+  <a-drawer :open="mobileMenuOpen" placement="top" :height="440" @close="mobileMenuOpen = false" title="功能导航">
+    <a-menu mode="inline" v-model:selectedKeys="selectedMenuKeys" @select="onMenuSelect">
+      <a-menu-item key="dashboard">数据看板</a-menu-item>
+      <a-menu-item key="appointments">预约管理</a-menu-item>
+      <a-menu-item key="records">病历管理</a-menu-item>
+      <a-menu-item key="pharmacy">药品与库存</a-menu-item>
+      <a-menu-item key="inpatient">住院管理</a-menu-item>
+      <a-menu-item key="payments">在线支付</a-menu-item>
+      <a-menu-item key="reports">报表统计</a-menu-item>
+    </a-menu>
+  </a-drawer>
 </template>
 
 <script setup>
@@ -58,10 +87,14 @@ import {
   LogoutOutlined,
   SettingOutlined,
   UserOutlined,
+  MenuOutlined,
+  EllipsisOutlined,
+  SearchOutlined,
 } from '@ant-design/icons-vue'
 
 const selectedMenuKeys = ref(['dashboard'])
 const searchValue = ref('')
+const mobileMenuOpen = ref(false)
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
@@ -95,6 +128,7 @@ function onMenuSelect({ key }) {
   if (path) {
     const menu = defaultMenuByKey[key]
     router.push(menu ? { path, query: { menu } } : { path })
+    mobileMenuOpen.value = false
   }
 }
 
@@ -114,7 +148,7 @@ watch(() => route.path, syncSelected, { immediate: true })
 .app-header {
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: space-between;
   padding: 0 24px;
   height: $header-height-prime;
   box-sizing: border-box;
@@ -144,6 +178,9 @@ watch(() => route.path, syncSelected, { immediate: true })
 }
 
 .action-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 18px;
 }
 
@@ -153,5 +190,69 @@ watch(() => route.path, syncSelected, { immediate: true })
   gap: 8px;
   cursor: pointer;
   font-size: 14px;
+}
+
+.user-name {
+  white-space: nowrap;
+}
+
+.nav {
+  flex: 1;
+  min-width: 10px;
+}
+
+.mobile-menu-trigger {
+  display: none;
+}
+
+.search {
+  width: 280px;
+}
+
+.search-trigger {
+  display: none;
+}
+
+@media (max-width: $breakpoint-xl) {
+  .actions {
+    gap: 8px;
+  }
+  .search {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: $breakpoint-lg) {
+  .search {
+    display: none;
+  }
+  .search-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+@media (max-width: $breakpoint-md) {
+  .brand {
+    min-width: auto;
+  }
+  .nav {
+    display: none;
+  }
+  .mobile-menu-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+@media (max-width: $breakpoint-xs) {
+  .brand {
+    min-width: auto;
+  }
+  .brand-name-primary {
+    display: none;
+  }
 }
 </style>

@@ -11,6 +11,7 @@
         </p>
       </div>
     </div>
+    <a-divider />
     <a-divider type="vertical" />
     <a-card class="login-card" :bordered="false">
       <div class="title">在线医疗管理系统</div>
@@ -139,6 +140,7 @@ const onFinish = async () => {
   -webkit-text-fill-color: transparent;
   color: transparent;
   text-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  word-break: break-all;
 }
 
 .intro-desc {
@@ -207,7 +209,72 @@ const onFinish = async () => {
   z-index: 2;
 }
 
+:deep(.ant-divider-horizontal) {
+  display: none;
+  min-width: 0;
+  max-width: 400px;
+  border-top-color: rgba(255, 255, 255, 0.25);
+  margin: 24px 0 40px 0;
+  position: relative;
+  z-index: 2;
+}
+
 :deep(.ant-checkbox-wrapper) {
   color: rgba(255, 255, 255, 0.9);
+}
+
+@media (max-width: $breakpoint-lg) {
+  .login-page {
+    max-height: 90vh;
+    flex-direction: column;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .intro {
+    text-align: center;
+  }
+
+  :deep(.ant-divider-vertical) {
+    display: none;
+  }
+
+  :deep(.ant-divider-horizontal) {
+    display: flex;
+  }
+
+  .login-card {
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+    padding-top: 24px;
+  }
+}
+
+@media (max-width: $breakpoint-sm) {
+  .intro-title {
+    font-size: 40px;
+  }
+
+  .intro-desc {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: $breakpoint-xs) {
+  .login-card {
+    width: 90%;
+    padding: 16px;
+  }
+
+  .intro-title {
+    //word-break: keep-all;
+    //line-break: strict;
+    //text-wrap: balance;
+    font-size: 8vw;
+  }
+
+  :deep(.ant-divider-horizontal) {
+    min-width: 0;
+    max-width: 80%;
+  }
 }
 </style>
