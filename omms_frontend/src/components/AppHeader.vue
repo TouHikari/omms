@@ -7,7 +7,8 @@
       <span class="brand-name">在线医疗管理系统 OMMS</span>
     </div>
 
-    <a-menu mode="horizontal" v-model:selectedKeys="selectedMenuKeys" :style="{ flex: 1, minWidth: '480px' }">
+    <a-menu mode="horizontal" v-model:selectedKeys="selectedMenuKeys" :style="{ flex: 1, minWidth: '480px' }" @select="onMenuSelect">
+      <a-menu-item key="dashboard">数据看板</a-menu-item>
       <a-menu-item key="appointments">预约管理</a-menu-item>
       <a-menu-item key="records">病历管理</a-menu-item>
       <a-menu-item key="pharmacy">药品与库存</a-menu-item>
@@ -49,8 +50,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import {
   DownOutlined,
@@ -59,15 +60,52 @@ import {
   UserOutlined,
 } from '@ant-design/icons-vue'
 
-const selectedMenuKeys = ref(['appointments'])
+const selectedMenuKeys = ref(['dashboard'])
 const searchValue = ref('')
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 
 function onLogout() {
   auth.logout()
   router.replace('/login')
 }
+
+const keyToPath = {
+  dashboard: '/',
+  appointments: '/appointments',
+  records: '/records',
+  pharmacy: '/pharmacy',
+  inpatient: '/inpatient',
+  payments: '/payments',
+  reports: '/reports',
+}
+
+function onMenuSelect({ key }) {
+  const path = keyToPath[key]
+  const defaultMenuByKey = {
+    dashboard: 'overview_today',
+    appointments: 'list_all',
+    records: 'list_all',
+    pharmacy: 'inventory_drugs',
+    inpatient: 'wards_list',
+    payments: 'transactions_list',
+    reports: 'daily_visits',
+  }
+  if (path) {
+    const menu = defaultMenuByKey[key]
+    router.push(menu ? { path, query: { menu } } : { path })
+  }
+}
+
+function syncSelected() {
+  const path = route.path
+  const pairs = Object.entries(keyToPath)
+  const found = pairs.find(([, p]) => p === path)
+  selectedMenuKeys.value = found ? [found[0]] : []
+}
+
+watch(() => route.path, syncSelected, { immediate: true })
 </script>
 
 <style scoped lang="scss">
@@ -113,5 +151,7 @@ function onLogout() {
   display: flex;
   align-items: center;
   gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
 }
 </style>

@@ -1,5 +1,17 @@
 <template>
   <div class="login-page">
+    <video class="bg-video" src="/video.min.mp4" autoplay muted loop playsinline></video>
+    <div class="bg-mask"></div>
+    <div class="login-left">
+      <div class="intro">
+        <h2 class="intro-title">医者之心，数据之光</h2>
+        <p class="intro-desc">
+          仁术为本，数据为器；<br />
+          诊治有序，合规如磐。
+        </p>
+      </div>
+    </div>
+    <a-divider type="vertical" />
     <a-card class="login-card" :bordered="false">
       <div class="title">在线医疗管理系统</div>
       <div class="subtitle">账号登录</div>
@@ -76,17 +88,79 @@ const onFinish = async () => {
 .login-page {
   height: 100vh;
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   padding: 0;
   background: #f5f5f5;
+  position: relative;
+  overflow: hidden;
+}
+
+.bg-video {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  pointer-events: none;
+  filter: brightness(0.6) saturate(0.95);
+}
+
+.bg-mask {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.login-left {
+  width: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+}
+
+.intro {
+  max-width: 480px;
+}
+
+.intro-title {
+  font-size: 50px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  background: linear-gradient(90deg, #1677ff 0%, #69b1ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.intro-desc {
+  font-size: 16px;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: right;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
 }
 
 .login-card {
-  width: 420px;
+  width: 440px;
   padding: 24px;
-  border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+  color: #fff;
+  position: relative;
+  z-index: 2;
 }
 
 .title {
@@ -94,11 +168,12 @@ const onFinish = async () => {
   font-weight: 600;
   font-size: 20px;
   margin-bottom: 8px;
+  color: #fff;
 }
 
 .subtitle {
   text-align: center;
-  color: #666;
+  color: rgba(255, 255, 255, 0.85);
   margin-bottom: 16px;
 }
 
@@ -107,5 +182,32 @@ const onFinish = async () => {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 8px;
+}
+
+:deep(.ant-form-item-label > label) {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+//:deep(.ant-input),
+//:deep(.ant-input-affix-wrapper) {
+//  background: rgba(255,255,255,0.14);
+//  border-color: rgba(255,255,255,0.35);
+//  color: #fff;
+//}
+
+//:deep(.ant-input::placeholder) {
+//  color: rgba(255,255,255,0.75);
+//}
+
+:deep(.ant-divider-vertical) {
+  height: 320px;
+  border-left-color: rgba(255, 255, 255, 0.25);
+  margin: 0 24px;
+  position: relative;
+  z-index: 2;
+}
+
+:deep(.ant-checkbox-wrapper) {
+  color: rgba(255, 255, 255, 0.9);
 }
 </style>
