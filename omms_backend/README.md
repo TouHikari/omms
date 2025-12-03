@@ -21,20 +21,22 @@
 omms_backend/
 ├── app/
 │   ├── api/            # API 路由定义
-│   ├── core/           # 核心配置 (config, security, exceptions)
+│   ├── core/           # 核心配置 (统一响应等)
 │   ├── db/             # 数据库连接与会话
 │   ├── models/         # SQLAlchemy 数据模型
+│   │   ├── __init__.py # Base 声明
 │   ├── schemas/        # Pydantic 数据验证模型 (DTOs)
-│   ├── services/       # 业务逻辑层
-│   ├── utils/          # 工具函数
-│   └── server.py       # 应用入口
-├── alembic/            # 数据库迁移脚本
-├── tests/              # 测试用例
+│   ├── server.py       # 应用入口
+│   └── settings.py     # 环境变量与数据库配置
+├── scripts/            # 开发/运维辅助脚本
+│   └── init_db.py      # 数据库重建与开发数据初始化
 ├── .env.example        # 环境变量示例
-├── alembic.ini         # Alembic 配置
-├── pyproject.toml      # 项目依赖管理 (或 requirements.txt)
+├── requirements.txt    # 项目依赖
 └── README.md           # 项目文档
 ```
+
+数据库结构定义文件：
+- 仓库根目录：[`docs/omms.sql`](../docs/omms.sql)
 
 ## 快速开始
 
@@ -128,7 +130,20 @@ alembic revision --autogenerate -m "Initial migration"
 alembic upgrade head
 ```
 
-### 7. 启动服务
+### 7. 开发数据一键初始化
+
+如需清空当前数据并导入完善的开发预设数据，可使用脚本：
+
+```powershell
+python omms_backend/scripts/init_db.py
+```
+
+说明：
+- 脚本会执行 `docs/omms.sql` 以重建核心业务表结构，并在此基础上创建应用内表 `records` 与 `record_templates`。
+- 将自动写入多条病历模板与病历样例数据，便于联调与演示。
+- 运行前需已正确配置 `.env` 中的数据库连接参数。
+
+### 8. 启动服务
 
 开发模式（支持热重载）：
 
@@ -136,7 +151,7 @@ alembic upgrade head
 uvicorn app.server:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 8. 访问接口文档
+### 9. 访问接口文档
 
 启动成功后，访问以下地址查看自动生成的 API 文档：
 

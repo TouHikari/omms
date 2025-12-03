@@ -11,8 +11,8 @@ app = FastAPI(
     version="0.1.0",
     docs_url=None,
     redoc_url=None,
-    contact={"name": "OMMS", "email": "admin@omms.local"},
-    license_info={"name": "MIT"},
+    #contact={"name": "OMMS", "email": "admin@omms.local"},
+    #license_info={"name": "MIT"},
 )
 
 app.add_middleware(
