@@ -21,20 +21,23 @@
 omms_backend/
 ├── app/
 │   ├── api/            # API 路由定义
-│   ├── core/           # 核心配置 (config, security, exceptions)
+│   ├── core/           # 核心配置 (统一响应等)
 │   ├── db/             # 数据库连接与会话
 │   ├── models/         # SQLAlchemy 数据模型
+│   │   ├── __init__.py # Base 声明
 │   ├── schemas/        # Pydantic 数据验证模型 (DTOs)
-│   ├── services/       # 业务逻辑层
-│   ├── utils/          # 工具函数
-│   └── main.py         # 应用入口
-├── alembic/            # 数据库迁移脚本
-├── tests/              # 测试用例
+│   ├── server.py       # 应用入口
+│   └── settings.py     # 环境变量与数据库配置
+├── scripts/            # 开发/运维辅助脚本
+│   └── init_db.py      # 数据库重建与开发数据初始化
 ├── .env.example        # 环境变量示例
-├── alembic.ini         # Alembic 配置
-├── pyproject.toml      # 项目依赖管理 (或 requirements.txt)
+├── requirements.txt    # 项目依赖
 └── README.md           # 项目文档
 ```
+
+数据库结构定义文件：
+
+- 仓库根目录：[`docs/omms.sql`](../docs/omms.sql)
 
 ## 快速开始
 
@@ -82,7 +85,7 @@ pip install -r requirements.txt
 _(注意：项目初期可能暂无 `requirements.txt`，请先安装核心依赖)_
 
 ```bash
-pip install fastapi uvicorn[standard] sqlalchemy pymysql aiomysql pydantic pydantic-settings alembic python-jose[cryptography] passlib[bcrypt] python-multipart
+pip install fastapi uvicorn[standard] sqlalchemy pymysql aiomysql pydantic pydantic-settings alembic python-jose[cryptography] passlib[bcrypt] python-multipart python-dotenv
 ```
 
 ### 5. 配置环境变量
@@ -91,7 +94,7 @@ pip install fastapi uvicorn[standard] sqlalchemy pymysql aiomysql pydantic pydan
 
 ```ini
 # .env
-PROJECT_NAME="OMMS Backend"
+PROJECT_NAME="OMMS"
 API_V1_STR=""
 
 # Database
@@ -128,27 +131,60 @@ alembic revision --autogenerate -m "Initial migration"
 alembic upgrade head
 ```
 
-### 7. 启动服务
+### 7. 开发数据一键初始化
+
+使用脚本快速清空并导入预设开发数据，支持本地与服务器：
+
+```powershell
+# 查看帮助
+python omms_backend/scripts/init_db.py --help
+
+# 本地快速使用 SQLite（仅病历模块，自动写入模板与样例）
+python omms_backend/scripts/init_db.py --sqlite --mode app --seed-count 20
+
+# 使用 MySQL，仅初始化病历模块（需 `.env` 配置 MySQL）
+python omms_backend/scripts/init_db.py --mode app
+
+# 完整建库（执行 docs/omms.sql），再灌入病历模块演示数据
+python omms_backend/scripts/init_db.py --mode full
+# 如 SQL 不在默认路径，可指定：
+python omms_backend/scripts/init_db.py --mode full --sql D:/data/omms.sql
+
+# 在不便执行 SQL 的环境下，跳过 SQL 仅创建病历模块表
+python omms_backend/scripts/init_db.py --mode full --skip-sql
+
+# 自定义数据库连接（覆盖 `.env` 的 DATABASE_URL）
+python omms_backend/scripts/init_db.py --dsn "mysql+aiomysql://user:pass@host:3306/medical_system" --mode app
+```
+
+说明：
+
+- `--mode app` 仅通过 ORM 创建当前模块所需表（`records`、`record_templates`），并自动写入多条模板与病历样例数据，便于联调与演示。
+- `--mode full` 若未使用 `--skip-sql`，会执行 `docs/omms.sql` 以重建核心业务表结构；随后仍会创建并写入病历模块演示数据。
+- 可使用 `--sqlite` 在本地无数据库服务时快速落地；或用 `--dsn` 传入自定义连接字符串（含 MySQL/SQLite）。
+
+### 8. 启动服务
 
 开发模式（支持热重载）：
 
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.server:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 8. 访问接口文档
+### 9. 访问接口文档
 
 启动成功后，访问以下地址查看自动生成的 API 文档：
 
 - Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
 - ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
+## 架构说明
+
+- 新增业务路由置于 `app/api/`，通过 `app/api/__init__.py` 聚合后由 `app/server.py` 在 `"/api"` 前缀下统一挂载。
+- 路由前缀：`/api` 当前固定；`API_V1_STR` 尚未启用，后续如需版本化可与该变量结合使用。
+
 ## 开发规范
 
 - **代码格式化**: 使用 `black` 和 `isort`。
 - **风格检查**: 使用 `flake8` 或 `ruff`。
 - **Git 提交信息**: 遵循 Conventional Commits 规范 (e.g., `feat: add login api`, `fix: resolve db connection issue`)。
-
-## 许可证
-
-MIT
