@@ -209,7 +209,7 @@ async function submitEdit() {
         <a-radio-group v-if="modeFilter === 'by_status'" v-model:value="statusFilter" style="margin-left: 12px">
           <a-radio-button value="draft">草稿</a-radio-button>
           <a-radio-button value="finalized">定稿</a-radio-button>
-          <a-radio-button value="archived">归档</a-radio-button>
+          <a-radio-button value="cancelled">作废</a-radio-button>
         </a-radio-group>
         <a-input-search v-if="modeFilter === 'by_patient'" v-model:value="patientKeyword" style="margin-left: 12px; width: 240px" placeholder="输入患者姓名" />
         <a-select v-if="modeFilter === 'by_doctor'" v-model:value="doctorId" :options="doctorOptions" style="margin-left: 12px; width: 260px" placeholder="选择医生" />
@@ -226,8 +226,8 @@ async function submitEdit() {
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'status'">
-          <a-tag :color="{ draft: 'blue', finalized: 'green', archived: 'default' }[record.status]">
-            {{ { draft: '草稿', finalized: '定稿', archived: '归档' }[record.status] }}
+          <a-tag :color="{ draft: 'blue', finalized: 'green', cancelled: 'default' }[record.status]">
+            {{ { draft: '草稿', finalized: '定稿', cancelled: '作废' }[record.status] }}
           </a-tag>
         </template>
         <template v-else-if="column.key === 'action'">
@@ -239,7 +239,7 @@ async function submitEdit() {
                 <a-menu>
                   <a-menu-item key="draft" @click="onUpdateStatus(record, 'draft')">置为草稿</a-menu-item>
                   <a-menu-item key="finalized" @click="onUpdateStatus(record, 'finalized')">置为定稿</a-menu-item>
-                  <a-menu-item key="archived" @click="onUpdateStatus(record, 'archived')">置为归档</a-menu-item>
+                  <a-menu-item key="cancelled" @click="onUpdateStatus(record, 'cancelled')">置为作废</a-menu-item>
                 </a-menu>
               </template>
             </a-dropdown>
@@ -253,7 +253,7 @@ async function submitEdit() {
   <a-modal v-model:open="detailVisible" title="病历详情" :footer="null" width="780px">
     <a-descriptions :column="2" bordered size="small">
       <a-descriptions-item label="病历号">{{ detailRecord?.id }}</a-descriptions-item>
-      <a-descriptions-item label="状态">{{ { draft: '草稿', finalized: '定稿', archived: '归档' }[detailRecord?.status] }}</a-descriptions-item>
+      <a-descriptions-item label="状态">{{ { draft: '草稿', finalized: '定稿', cancelled: '作废' }[detailRecord?.status] }}</a-descriptions-item>
       <a-descriptions-item label="患者">{{ detailRecord?.patient }}</a-descriptions-item>
       <a-descriptions-item label="创建时间">{{ detailRecord?.createdAt }}</a-descriptions-item>
       <a-descriptions-item label="科室">{{ detailRecord?.department }}</a-descriptions-item>

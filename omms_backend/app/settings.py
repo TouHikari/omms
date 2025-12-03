@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     MYSQL_PORT: int = 3306
     MYSQL_DB: str = "medical_system"
 
+    SECRET_KEY: str = "change-this-to-a-secure-random-key"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
     DB_SSL: bool = False
     SSL_CA: str | None = None
     SSL_CERT: str | None = None

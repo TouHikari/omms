@@ -54,8 +54,9 @@ def reset_schema_with_sql(settings_obj, sql_path: Path) -> None:
 async def seed_app_tables(
     init_db_func, session_factory, engine_obj, seed_count: int = 20
 ) -> None:
-    from sqlalchemy import delete
+    from sqlalchemy import delete, text
     from app.models.record import MedicalRecord, RecordTemplate
+    from app.core.security import get_password_hash
 
     await init_db_func()
     async with session_factory() as session:
@@ -137,6 +138,112 @@ async def seed_app_tables(
             )
             session.add(record)
         await session.commit()
+
+        # seed identity groups and admin
+        try:
+            await session.execute(text("SELECT 1 FROM users LIMIT 1"))
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            async def upsert_user(username: str, password: str, email: str | None, real_name: str, role_id: int, phone: str | None = None) -> int:
+                res = await session.execute(text("SELECT user_id FROM users WHERE username=:u OR email=:u"), {"u": username})
+                row = res.first()
+                if not row:
+                    await session.execute(
+                        text(
+                            """
+                            INSERT INTO users (username,password,email,phone,real_name,status,created_at,updated_at,role_id)
+                            VALUES (:username,:password,:email,:phone,:real_name,1,:created,:updated,:role_id)
+                            """
+                        ),
+                        {
+                            "username": username,
+                            "password": get_password_hash(password),
+                            "email": email,
+                            "phone": phone,
+                            "real_name": real_name,
+                            "created": now,
+                            "updated": now,
+                            "role_id": role_id,
+                        },
+                    )
+                res2 = await session.execute(text("SELECT user_id FROM users WHERE username=:username"), {"username": username})
+                return int(res2.first()[0])
+
+            # admin
+            admin_uid = await upsert_user("admin@omms", "admin123", "admin@omms", "系统管理员", 1)
+
+            # doctor
+            doc_uid = await upsert_user("doctor001", "omms123", "doctor001@omms", "李医生", 2)
+            res_doc = await session.execute(text("SELECT doctor_id FROM doctors WHERE user_id=:uid"), {"uid": doc_uid})
+            if not res_doc.first():
+                await session.execute(
+                    text(
+                        """
+                        INSERT INTO doctors (user_id,name,department,title,specialty,intro,available_status,created_at,updated_at)
+                        VALUES (:uid,:name,:dept,:title,:spec,:intro,1,:created,:updated)
+                        """
+                    ),
+                    {
+                        "uid": doc_uid,
+                        "name": "李医生",
+                        "dept": "内科",
+                        "title": "主治医师",
+                        "spec": "呼吸内科",
+                        "intro": "",
+                        "created": now,
+                        "updated": now,
+                    },
+                )
+
+            # nurse
+            nurse_uid = await upsert_user("nurse001", "omms123", "nurse001@omms", "王护士", 4)
+            res_nurse = await session.execute(text("SELECT nurse_id FROM nurses WHERE user_id=:uid"), {"uid": nurse_uid})
+            if not res_nurse.first():
+                await session.execute(
+                    text(
+                        """
+                        INSERT INTO nurses (user_id,name,department,title,created_at,updated_at)
+                        VALUES (:uid,:name,:dept,:title,:created,:updated)
+                        """
+                    ),
+                    {
+                        "uid": nurse_uid,
+                        "name": "王护士",
+                        "dept": "内科",
+                        "title": "护士",
+                        "created": now,
+                        "updated": now,
+                    },
+                )
+
+            # patient
+            pat_uid = await upsert_user("patient001", "omms123", "patient001@omms", "张患者", 3)
+            res_pat = await session.execute(text("SELECT patient_id FROM patients WHERE user_id=:uid"), {"uid": pat_uid})
+            if not res_pat.first():
+                await session.execute(
+                    text(
+                        """
+                        INSERT INTO patients (user_id,name,gender,birthday,id_card,address,emergency_contact,emergency_phone,created_at,updated_at)
+                        VALUES (:uid,:name,:gender,:birthday,:id_card,:address,:ec,:ep,:created,:updated)
+                        """
+                    ),
+                    {
+                        "uid": pat_uid,
+                        "name": "张患者",
+                        "gender": 1,
+                        "birthday": "1990-01-01",
+                        "id_card": "110101199001010000",
+                        "address": "北京市东城区XX路XX号",
+                        "ec": "李四",
+                        "ep": "13800000002",
+                        "created": now,
+                        "updated": now,
+                    },
+                )
+
+            await session.commit()
+        except Exception:
+            pass
 
     await engine_obj.dispose()
 

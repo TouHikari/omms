@@ -4,6 +4,7 @@ import NotFoundPage from '@/views/404Page.vue'
 import DashBoardPage from '@/views/DashBoardPage.vue'
 import LoginPage from '@/views/LoginPage.vue'
 import SimpleLayout from '@/layouts/SimpleLayout.vue'
+import UserInfo from '@/views/UserInfo.vue'
 import AppointmentsManagement from '@/views/AppointmentsManagement.vue'
 import RecordsManagement from '@/views/RecordsManagement.vue'
 import PharmacyManagement from '@/views/PharmacyManagement.vue'
@@ -294,6 +295,18 @@ const router = createRouter({
       name: 'login',
       component: LoginPage,
       meta: { layout: 'blank', guestOnly: true, title: '登录' },
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: LoginPage,
+      meta: { layout: 'blank', guestOnly: true, title: '注册' },
+    },
+    {
+      path: '/user',
+      name: 'user',
+      component: UserInfo,
+      meta: { layout: SimpleLayout, requiresAuth: true, title: '个人中心' },
     },
     {
       path: '/:pathMatch(.*)*',
