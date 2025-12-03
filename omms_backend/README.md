@@ -36,6 +36,7 @@ omms_backend/
 ```
 
 数据库结构定义文件：
+
 - 仓库根目录：[`docs/omms.sql`](../docs/omms.sql)
 
 ## 快速开始
@@ -132,16 +133,35 @@ alembic upgrade head
 
 ### 7. 开发数据一键初始化
 
-如需清空当前数据并导入完善的开发预设数据，可使用脚本：
+使用脚本快速清空并导入预设开发数据，支持本地与服务器：
 
 ```powershell
-python omms_backend/scripts/init_db.py
+# 查看帮助
+python omms_backend/scripts/init_db.py --help
+
+# 本地快速使用 SQLite（仅病历模块，自动写入模板与样例）
+python omms_backend/scripts/init_db.py --sqlite --mode app --seed-count 20
+
+# 使用 MySQL，仅初始化病历模块（需 `.env` 配置 MySQL）
+python omms_backend/scripts/init_db.py --mode app
+
+# 完整建库（执行 docs/omms.sql），再灌入病历模块演示数据
+python omms_backend/scripts/init_db.py --mode full
+# 如 SQL 不在默认路径，可指定：
+python omms_backend/scripts/init_db.py --mode full --sql D:/data/omms.sql
+
+# 在不便执行 SQL 的环境下，跳过 SQL 仅创建病历模块表
+python omms_backend/scripts/init_db.py --mode full --skip-sql
+
+# 自定义数据库连接（覆盖 `.env` 的 DATABASE_URL）
+python omms_backend/scripts/init_db.py --dsn "mysql+aiomysql://user:pass@host:3306/medical_system" --mode app
 ```
 
 说明：
-- 脚本会执行 `docs/omms.sql` 以重建核心业务表结构，并在此基础上创建应用内表 `records` 与 `record_templates`。
-- 将自动写入多条病历模板与病历样例数据，便于联调与演示。
-- 运行前需已正确配置 `.env` 中的数据库连接参数。
+
+- `--mode app` 仅通过 ORM 创建当前模块所需表（`records`、`record_templates`），并自动写入多条模板与病历样例数据，便于联调与演示。
+- `--mode full` 若未使用 `--skip-sql`，会执行 `docs/omms.sql` 以重建核心业务表结构；随后仍会创建并写入病历模块演示数据。
+- 可使用 `--sqlite` 在本地无数据库服务时快速落地；或用 `--dsn` 传入自定义连接字符串（含 MySQL/SQLite）。
 
 ### 8. 启动服务
 
