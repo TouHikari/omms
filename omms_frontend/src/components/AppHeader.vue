@@ -107,7 +107,8 @@ onMounted(async () => {
     if (auth.isAuthenticated && !auth.user) {
       await auth.fetchMe()
     }
-  } catch {
+  } catch (e) {
+    void e
   }
 })
 

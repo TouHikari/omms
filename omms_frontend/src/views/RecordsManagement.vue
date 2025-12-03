@@ -74,9 +74,9 @@ const metrics = computed(() => {
   const totalToday = records.value.filter(r => (r.createdAt || '').slice(0, 10) === todayStr).length
   const draft = records.value.filter(r => r.status === 'draft').length
   const finalized = records.value.filter(r => r.status === 'finalized').length
-  const archived = records.value.filter(r => r.status === 'archived').length
+  const cancelled = records.value.filter(r => r.status === 'cancelled').length
   const withTests = records.value.filter(r => r.hasLab || r.hasImaging).length
-  return { totalToday, draft, finalized, archived, withTests }
+  return { totalToday, draft, finalized, cancelled, withTests }
 })
 
 async function updateStatus(id, status) {
@@ -147,14 +147,14 @@ const panelMenuMap = { list: 'list_all', create: 'create', templates: 'templates
           </div>
         </a-card>
 
-        <a-card class="metric-card metric-archived" :bordered="false" @click="setMenu('list_status_archived')">
+        <a-card class="metric-card metric-archived" :bordered="false" @click="setMenu('list_status_cancelled')">
           <div class="metric">
             <div class="metric-icon-wrap">
               <FileTextOutlined class="metric-icon" />
             </div>
             <div class="metric-content">
-              <div class="metric-label">已归档</div>
-              <div class="metric-value">{{ metrics.archived }}</div>
+              <div class="metric-label">已作废</div>
+              <div class="metric-value">{{ metrics.cancelled }}</div>
             </div>
           </div>
         </a-card>
