@@ -296,6 +296,12 @@ const router = createRouter({
       meta: { layout: 'blank', guestOnly: true, title: '登录' },
     },
     {
+      path: '/register',
+      name: 'register',
+      component: LoginPage,
+      meta: { layout: 'blank', guestOnly: true, title: '注册' },
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: NotFoundPage,

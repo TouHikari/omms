@@ -13,74 +13,58 @@
     </div>
     <a-divider />
     <a-divider type="vertical" />
-    <a-card class="login-card" :bordered="false">
-      <div class="title">在线医疗管理系统</div>
-      <div class="subtitle">账号登录</div>
-      <a-alert v-if="errorMsg" type="error" :message="errorMsg" show-icon style="margin-bottom: 12px;" />
 
-      <a-form layout="vertical" :model="form" :rules="rules" @finish="onFinish">
-        <a-form-item name="username" label="用户名">
-          <a-input v-model:value="form.username" size="large" placeholder="请输入用户名">
-            <template #prefix>
-              <UserOutlined />
-            </template>
-          </a-input>
-        </a-form-item>
+    <!-- Dynamic Component Injection -->
+    <transition name="fade" mode="out-in">
+      <component :is="currentComponent" @switch-mode="handleSwitchMode" />
+    </transition>
 
-        <a-form-item name="password" label="密码">
-          <a-input-password v-model:value="form.password" size="large" placeholder="请输入密码">
-            <template #prefix>
-              <LockOutlined />
-            </template>
-          </a-input-password>
-        </a-form-item>
-
-        <div class="extra">
-          <a-checkbox v-model:checked="form.remember">记住我</a-checkbox>
-        </div>
-
-        <a-form-item>
-          <a-button type="primary" size="large" block html-type="submit" :loading="loading">登录</a-button>
-        </a-form-item>
-      </a-form>
-
-    </a-card>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { UserOutlined, LockOutlined } from '@ant-design/icons-vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import LoginCard from '@/components/auth/LoginCard.vue'
+import RegisterCard from '@/components/auth/RegisterCard.vue'
 
-const form = ref({ username: '', password: '', remember: true })
-const loading = ref(false)
-const errorMsg = ref('')
-const router = useRouter()
 const route = useRoute()
-const auth = useAuthStore()
+const router = useRouter()
+const mode = ref('login') // 'login' or 'register'
 
-const rules = {
-  username: [{ required: true, message: '请输入用户名' }],
-  password: [{ required: true, message: '请输入密码' }],
+const currentComponent = computed(() => {
+  return mode.value === 'register' ? RegisterCard : LoginCard
+})
+
+const handleSwitchMode = (newMode) => {
+  mode.value = newMode
+  // Optionally update URL without reloading
+  if (newMode === 'register') {
+    router.replace('/register')
+  } else {
+    router.replace('/login')
+  }
 }
 
-const onFinish = async () => {
-  loading.value = true
-  setTimeout(() => {
-    try {
-      auth.loginWithPassword({ username: form.value.username, password: form.value.password })
-      errorMsg.value = ''
-      const redirect = route.query.redirect?.toString() || '/'
-      router.replace(redirect)
-    } catch (e) {
-      errorMsg.value = e.message || '登录失败'
-    } finally {
-      loading.value = false
-    }
-  }, 300)
+// Sync with route on mount and change
+const syncModeFromRoute = () => {
+  if (route.path === '/register') {
+    mode.value = 'register'
+  } else {
+    mode.value = 'login'
+  }
 }
+
+onMounted(() => {
+  syncModeFromRoute()
+})
+
+watch(
+  () => route.path,
+  () => {
+    syncModeFromRoute()
+  }
+)
 </script>
 
 <style scoped lang="scss">
@@ -151,56 +135,6 @@ const onFinish = async () => {
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
 }
 
-.login-card {
-  width: 440px;
-  padding: 24px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
-  color: #fff;
-  position: relative;
-  z-index: 2;
-}
-
-.title {
-  text-align: center;
-  font-weight: 600;
-  font-size: 20px;
-  margin-bottom: 8px;
-  color: #fff;
-}
-
-.subtitle {
-  text-align: center;
-  color: rgba(255, 255, 255, 0.85);
-  margin-bottom: 16px;
-}
-
-.extra {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-:deep(.ant-form-item-label > label) {
-  color: rgba(255, 255, 255, 0.9);
-}
-
-//:deep(.ant-input),
-//:deep(.ant-input-affix-wrapper) {
-//  background: rgba(255,255,255,0.14);
-//  border-color: rgba(255,255,255,0.35);
-//  color: #fff;
-//}
-
-//:deep(.ant-input::placeholder) {
-//  color: rgba(255,255,255,0.75);
-//}
-
 :deep(.ant-divider-vertical) {
   height: 320px;
   border-left-color: rgba(255, 255, 255, 0.25);
@@ -219,8 +153,15 @@ const onFinish = async () => {
   z-index: 2;
 }
 
-:deep(.ant-checkbox-wrapper) {
-  color: rgba(255, 255, 255, 0.9);
+/* Transition effects */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 @media (max-width: $breakpoint-lg) {
@@ -242,11 +183,6 @@ const onFinish = async () => {
   :deep(.ant-divider-horizontal) {
     display: flex;
   }
-
-  .login-card {
-    border-top: 1px solid rgba(255, 255, 255, 0.25);
-    padding-top: 24px;
-  }
 }
 
 @media (max-width: $breakpoint-sm) {
@@ -260,15 +196,7 @@ const onFinish = async () => {
 }
 
 @media (max-width: $breakpoint-xs) {
-  .login-card {
-    width: 90%;
-    padding: 16px;
-  }
-
   .intro-title {
-    //word-break: keep-all;
-    //line-break: strict;
-    //text-wrap: balance;
     font-size: 8vw;
   }
 
