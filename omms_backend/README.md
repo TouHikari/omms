@@ -187,4 +187,18 @@ uvicorn app.server:app --reload --host 0.0.0.0 --port 8000
 
 - **代码格式化**: 使用 `black` 和 `isort`。
 - **风格检查**: 使用 `flake8` 或 `ruff`。
-- **Git 提交信息**: 遵循 Conventional Commits 规范 (e.g., `feat: add login api`, `fix: resolve db connection issue`)。
+
+## 认证与鉴权
+
+- 认证方式：JWT，登录成功后返回 `accessToken`。
+- 认证接口：
+  - `POST /api/auth/register` 注册用户（默认赋予 PATIENT 身份）
+  - `POST /api/auth/login` 用户登录（支持用户名或邮箱），返回 JWT
+  - `GET /api/auth/me` 获取当前登录用户信息
+- 请求头：`Authorization: Bearer <accessToken>`。
+- 鉴权范围：`/api` 前缀下除 `auth` 路由外的所有接口均需携带有效 JWT。
+- 角色与权限：
+  - 四种身份组：`ADMIN`、`DOCTOR`、`NURSE`、`PATIENT`
+  - 可在路由中使用依赖实现细粒度控制：
+    - 按角色：`Depends(require_role_in(["ADMIN", "DOCTOR"]))`
+    - 按权限码：`Depends(require_perm_codes(["record:manage"]))`
