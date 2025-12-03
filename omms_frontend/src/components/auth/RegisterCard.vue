@@ -67,7 +67,6 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, IdcardOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
@@ -84,7 +83,6 @@ const form = reactive({
 })
 const loading = ref(false)
 const errorMsg = ref('')
-const router = useRouter()
 const auth = useAuthStore()
 
 const validateConfirmPassword = async (_rule, value) => {
@@ -140,7 +138,6 @@ const goToLogin = () => {
 
 .login-card {
   width: 440px;
-  // Increase height/scroll handling if form is too long
   max-height: 90vh;
   overflow-y: auto;
   padding: 24px;

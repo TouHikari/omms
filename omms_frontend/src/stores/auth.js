@@ -64,6 +64,33 @@ export const useAuthStore = defineStore('auth', () => {
     return json.data
   }
 
+  async function fetchMe() {
+    if (!token.value) throw new Error('未登录')
+    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token.value}`,
+      },
+    })
+    const json = await res.json()
+    if (json.code !== 200) throw new Error(json.message || '获取用户信息失败')
+    const u = json.data?.user || json.data
+    const roleId = u?.roleId ?? u?.role_id
+    const userId = u?.userId ?? u?.user_id
+    const realName = u?.realName ?? u?.real_name
+    const username = u?.username
+    role.value = roleFromId(roleId)
+    user.value = {
+      name: realName || username || '',
+      id: userId,
+      username,
+      email: u?.email || '',
+      phone: u?.phone || '',
+    }
+    return user.value
+  }
+
   function logout() {
     token.value = null
     role.value = null
@@ -80,5 +107,5 @@ export const useAuthStore = defineStore('auth', () => {
     else localStorage.removeItem('omms_role')
   })
 
-  return { token, role, user, isAuthenticated, login, loginWithPassword, loginWithApi, registerWithApi, logout }
+  return { token, role, user, isAuthenticated, login, loginWithPassword, loginWithApi, registerWithApi, fetchMe, logout }
 })

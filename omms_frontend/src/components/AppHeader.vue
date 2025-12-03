@@ -40,21 +40,21 @@
 
       <a-dropdown>
         <div class="user" role="button">
-          <a-avatar size="small" style="color: #f56a00; background-color: #fde3cf">A</a-avatar>
-          <span class="user-name">管理员</span>
+          <a-avatar size="small" :style="avatarStyle">{{ avatarLetter }}</a-avatar>
+          <span class="user-name">{{ displayName }}</span>
           <DownOutlined style="font-size: 10px;" />
         </div>
         <template #overlay>
           <a-menu>
-            <!--<a-menu-item key="profile">
+            <a-menu-item key="profile" @click="goProfile">
               <UserOutlined />
               个人中心
             </a-menu-item>
-            <a-menu-item key="settings">
+            <!--<a-menu-item key="settings">
               <SettingOutlined />
               系统设置
-            </a-menu-item>
-            <a-menu-divider />-->
+            </a-menu-item>-->
+            <a-menu-divider />
             <a-menu-item key="logout" @click="onLogout">
               <LogoutOutlined />
               退出登录
@@ -79,13 +79,12 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import {
   DownOutlined,
   LogoutOutlined,
-  SettingOutlined,
   UserOutlined,
   MenuOutlined,
   EllipsisOutlined,
@@ -98,6 +97,19 @@ const mobileMenuOpen = ref(false)
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
+
+const displayName = computed(() => auth.user?.name || auth.user?.username || '未登录')
+const avatarLetter = computed(() => (displayName.value || 'A').slice(0, 1).toUpperCase())
+const avatarStyle = { color: '#f56a00', backgroundColor: '#fde3cf' }
+
+onMounted(async () => {
+  try {
+    if (auth.isAuthenticated && !auth.user) {
+      await auth.fetchMe()
+    }
+  } catch {
+  }
+})
 
 function onLogout() {
   auth.logout()
@@ -130,6 +142,10 @@ function onMenuSelect({ key }) {
     router.push(menu ? { path, query: { menu } } : { path })
     mobileMenuOpen.value = false
   }
+}
+
+function goProfile() {
+  router.push('/user')
 }
 
 function syncSelected() {
