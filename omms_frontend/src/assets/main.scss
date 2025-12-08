@@ -1,0 +1,79 @@
+@forward 'variables';
+@use 'variables' as *;
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: local('JetBrains Mono'), url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: local('JetBrains Mono Bold'), local('JetBrains Mono'), url('/fonts/JetBrainsMono-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+//@font-face {
+//  font-family: 'Noto Sans SC';
+//  src: local('Noto Sans SC'), url('/fonts/NotoSansSC-Regular.woff2') format('woff2');
+//  font-weight: 400;
+//  font-style: normal;
+//  font-display: swap;
+//}
+
+//@font-face {
+//  font-family: 'Noto Sans SC';
+//  src: local('Noto Sans SC Bold'), local('Noto Sans SC'), url('/fonts/NotoSansSC-Bold.woff2') format('woff2');
+//  font-weight: 700;
+//  font-style: normal;
+//  font-display: swap;
+//}
+
+html {
+  //overflow-y: scroll;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Noto Sans SC', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+::selection {
+  color: #007DFF;
+  filter: invert(100%);
+  background-color: #00000020;
+}
+
+::-webkit-scrollbar {
+  width: $scrollbar-width;
+  height: $scrollbar-width;
+  transition: all 0.2s ease;
+}
+
+::-webkit-scrollbar-track {
+  background: $scrollbar-track-bg-light;
+}
+
+::-webkit-scrollbar-thumb {
+  background: $scrollbar-thumb-bg-light;
+  border: 1px solid $scrollbar-thumb-border-color-light;
+  //border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: $scrollbar-thumb-hover-bg-light;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: $scrollbar-thumb-active-bg-light;
+}
+
+// Ant Design
+ant-dropdown-menu-title-content {
+  white-space: nowrap;
+}
