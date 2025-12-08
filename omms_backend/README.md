@@ -133,35 +133,48 @@ alembic upgrade head
 
 ### 7. 开发数据一键初始化
 
-使用脚本快速清空并导入预设开发数据，支持本地与服务器：
+使用脚本快速迁移结构并清洗/导入预设数据，支持本地与服务器：
 
 ```powershell
 # 查看帮助
 python omms_backend/scripts/init_db.py --help
 
-# 本地快速使用 SQLite（仅病历模块，自动写入模板与样例）
-python omms_backend/scripts/init_db.py --sqlite --mode app --seed-count 20
-
-# 使用 MySQL，仅初始化病历模块（需 `.env` 配置 MySQL）
+# 常用：迁移结构 + 清洗并灌入演示数据（默认模式，适合经常运行）
 python omms_backend/scripts/init_db.py --mode app
 
-# 完整建库（执行 docs/omms.sql），再灌入病历模块演示数据
+# 仅迁移结构（不执行 docs/omms.sql，不删库）
+python omms_backend/scripts/init_db.py --mode migrate
+
+# 完整建库（执行 docs/omms.sql 的 DROP/CREATE），再灌入演示数据
 python omms_backend/scripts/init_db.py --mode full
-# 如 SQL 不在默认路径，可指定：
+
+# 指定 SQL 文件路径（配合 --mode full）
 python omms_backend/scripts/init_db.py --mode full --sql D:/data/omms.sql
 
-# 在不便执行 SQL 的环境下，跳过 SQL 仅创建病历模块表
-python omms_backend/scripts/init_db.py --mode full --skip-sql
+# 使用 SQLite（本地测试）
+python omms_backend/scripts/init_db.py --sqlite --mode app --seed-count 20
 
-# 自定义数据库连接（覆盖 `.env` 的 DATABASE_URL）
+# 自定义数据库连接（覆盖 `.env` 的 MySQL 连接）
 python omms_backend/scripts/init_db.py --dsn "mysql+aiomysql://user:pass@host:3306/medical_system" --mode app
 ```
 
-说明：
+脚本行为说明：
 
-- `--mode app` 仅通过 ORM 创建当前模块所需表（`records`、`record_templates`），并自动写入多条模板与病历样例数据，便于联调与演示。
-- `--mode full` 若未使用 `--skip-sql`，会执行 `docs/omms.sql` 以重建核心业务表结构；随后仍会创建并写入病历模块演示数据。
-- 可使用 `--sqlite` 在本地无数据库服务时快速落地；或用 `--dsn` 传入自定义连接字符串（含 MySQL/SQLite）。
+- 结构迁移（无删库）：
+  - 自动对齐与后端模型一致的列、索引与外键，包括：
+    - `departments`: 增加 `parent_id`、`sort_order`
+    - `doctors`: 将 `name` 调整为 `doctor_name`、增加 `dept_id` 外键、将 `intro` 调整为 `introduction`、移除旧 `department` 文本列
+    - `doctor_schedules`: 增加 `booked`
+    - `appointments`: 增加 `schedule_id` 及外键
+  - 若结构已正确，迁移步骤将跳过（幂等）。
+- 数据清洗与写入（示例数据）：
+  - 清空并写入：`departments`、`doctors`、`doctor_schedules`、`appointments`、`patients`、`medical_records`、`record_templates`
+  - 用户数据通过 `upsert` 写入，避免重复。
+
+建议：
+
+- 经常运行建议使用 `--mode app`，该模式会先进行“结构迁移”，然后清洗并灌入演示数据，不删除数据库或表。
+- 仅需修复库结构时使用 `--mode migrate`；需要彻底重建时使用 `--mode full`。
 
 ### 8. 启动服务
 

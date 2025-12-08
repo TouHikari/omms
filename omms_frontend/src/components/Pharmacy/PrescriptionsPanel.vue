@@ -1,18 +1,14 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
 
 const props = defineProps({
   currentMenu: { type: String, required: true },
   prescriptions: { type: Array, default: () => [] },
   updateStatus: { type: Function, required: true },
+  setMenu: { type: Function, required: true },
 })
 
-const mode = computed(() => {
-  const m = props.currentMenu || ''
-  if (m.startsWith('prescriptions_')) return m.replace('prescriptions_', '')
-  return 'list'
-})
 
 const statusFilter = ref('all')
 
@@ -28,13 +24,27 @@ const columns = [
 ]
 
 const filtered = computed(() => {
-  if (mode.value === 'review') return props.prescriptions.filter(p => p.status === 'pending')
-  if (mode.value === 'dispense') return props.prescriptions.filter(p => p.status === 'approved')
-  if (mode.value === 'status') {
-    if (statusFilter.value === 'all') return props.prescriptions
-    return props.prescriptions.filter(p => p.status === statusFilter.value)
-  }
+  const s = statusFilter.value
+  if (s === 'pending') return props.prescriptions.filter(p => p.status === 'pending')
+  if (s === 'approved') return props.prescriptions.filter(p => p.status === 'approved')
+  if (s === 'dispensed') return props.prescriptions.filter(p => p.status === 'dispensed')
   return props.prescriptions
+})
+
+watch(() => props.currentMenu, (m) => {
+  const key = (m || '')
+  if (key.startsWith('prescriptions_')) {
+    if (key === 'prescriptions_pending') statusFilter.value = 'pending'
+    else if (key === 'prescriptions_approved') statusFilter.value = 'approved'
+    else if (key === 'prescriptions_dispensed') statusFilter.value = 'dispensed'
+    else statusFilter.value = 'all'
+  }
+}, { immediate: true })
+
+watch(statusFilter, (s) => {
+  const targetMenu = s === 'all' ? 'prescriptions_list' : `prescriptions_${s}`
+  const key = (props.currentMenu || '')
+  if (key.startsWith('prescriptions_') && targetMenu !== props.currentMenu) props.setMenu(targetMenu)
 })
 
 async function approve(record) {
@@ -52,12 +62,6 @@ async function dispense(record) {
   <a-card>
     <a-space style="margin-bottom: 12px; width: 100%; justify-content: space-between">
       <div>
-        <a-button type="link">处方列表</a-button>
-        <a-button type="link">审核</a-button>
-        <a-button type="link">发药记录</a-button>
-        <a-button type="link">按状态</a-button>
-      </div>
-      <div v-if="mode === 'status'">
         <a-radio-group v-model:value="statusFilter">
           <a-radio-button value="all">全部</a-radio-button>
           <a-radio-button value="pending">待审核</a-radio-button>
@@ -67,7 +71,7 @@ async function dispense(record) {
       </div>
     </a-space>
 
-    <a-table :columns="columns" :data-source="filtered" rowKey="id">
+    <a-table :columns="columns" :data-source="filtered" :scroll="{ x: 860 }" size="small" rowKey="id">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'status'">
           <a-tag :color="{ pending: 'orange', approved: 'blue', dispensed: 'green' }[record.status]">

@@ -25,6 +25,7 @@ CREATE TABLE `appointments`  (
   `appt_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '预约ID',
   `patient_id` bigint(20) NOT NULL COMMENT '患者ID',
   `doctor_id` bigint(20) NOT NULL COMMENT '医生ID',
+  `schedule_id` bigint(20) NOT NULL COMMENT '排班ID',
   `appt_time` datetime NOT NULL COMMENT '预约时间',
   `status` tinyint(4) NULL DEFAULT 0 COMMENT '状态:0-待就诊,1-已就诊,2-已取消,3-已完成',
   `symptom_desc` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '症状描述',
@@ -34,10 +35,12 @@ CREATE TABLE `appointments`  (
   UNIQUE INDEX `uk_doctor_time`(`doctor_id`, `appt_time`) USING BTREE,
   INDEX `idx_appointments_patient_id`(`patient_id`) USING BTREE,
   INDEX `idx_appointments_doctor_id`(`doctor_id`) USING BTREE,
+  INDEX `idx_appointments_schedule_id`(`schedule_id`) USING BTREE,
   INDEX `idx_appointments_appt_time`(`appt_time`) USING BTREE,
   INDEX `idx_appointments_status`(`status`) USING BTREE,
   CONSTRAINT `appointments_ibfk_1` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`) ON DELETE CASCADE ON UPDATE RESTRICT,
-  CONSTRAINT `appointments_ibfk_2` FOREIGN KEY (`doctor_id`) REFERENCES `doctors` (`doctor_id`) ON DELETE CASCADE ON UPDATE RESTRICT
+  CONSTRAINT `appointments_ibfk_2` FOREIGN KEY (`doctor_id`) REFERENCES `doctors` (`doctor_id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `appointments_ibfk_3` FOREIGN KEY (`schedule_id`) REFERENCES `doctor_schedules` (`schedule_id`) ON DELETE CASCADE ON UPDATE RESTRICT
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '预约表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -52,6 +55,8 @@ CREATE TABLE `departments`  (
   `dept_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '科室ID',
   `dept_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '科室名称',
   `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '科室描述',
+  `parent_id` bigint(20) NULL DEFAULT NULL COMMENT '父级科室ID',
+  `sort_order` int(11) NULL DEFAULT 0 COMMENT '排序',
   `created_at` datetime NULL COMMENT '创建时间',
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`dept_id`) USING BTREE,
@@ -61,14 +66,14 @@ CREATE TABLE `departments`  (
 -- ----------------------------
 -- Records of departments
 -- ----------------------------
-INSERT INTO `departments` VALUES (1, '内科', '内科科室', '2025-11-14 11:13:59', '2025-11-14 11:13:59');
-INSERT INTO `departments` VALUES (2, '外科', '外科科室', '2025-11-14 11:13:59', '2025-11-14 11:13:59');
-INSERT INTO `departments` VALUES (3, '儿科', '儿科科室', '2025-11-14 11:13:59', '2025-11-14 11:13:59');
-INSERT INTO `departments` VALUES (4, '妇产科', '妇产科科室', '2025-11-14 11:13:59', '2025-11-14 11:13:59');
-INSERT INTO `departments` VALUES (5, '眼科', '眼科科室', '2025-11-14 11:13:59', '2025-11-14 11:13:59');
-INSERT INTO `departments` VALUES (6, '耳鼻喉科', '耳鼻喉科科室', '2025-11-14 11:13:59', '2025-11-14 11:13:59');
-INSERT INTO `departments` VALUES (7, '口腔科', '口腔科科室', '2025-11-14 11:13:59', '2025-11-14 11:13:59');
-INSERT INTO `departments` VALUES (8, '皮肤科', '皮肤科科室', '2025-11-14 11:13:59', '2025-11-14 11:13:59');
+INSERT INTO `departments` (`dept_id`, `dept_name`, `description`, `created_at`, `updated_at`) VALUES (1, '内科', '内科科室', '2025-11-14 11:13:59', '2025-11-14 11:13:59');
+INSERT INTO `departments` (`dept_id`, `dept_name`, `description`, `created_at`, `updated_at`) VALUES (2, '外科', '外科科室', '2025-11-14 11:13:59', '2025-11-14 11:13:59');
+INSERT INTO `departments` (`dept_id`, `dept_name`, `description`, `created_at`, `updated_at`) VALUES (3, '儿科', '儿科科室', '2025-11-14 11:13:59', '2025-11-14 11:13:59');
+INSERT INTO `departments` (`dept_id`, `dept_name`, `description`, `created_at`, `updated_at`) VALUES (4, '妇产科', '妇产科科室', '2025-11-14 11:13:59', '2025-11-14 11:13:59');
+INSERT INTO `departments` (`dept_id`, `dept_name`, `description`, `created_at`, `updated_at`) VALUES (5, '眼科', '眼科科室', '2025-11-14 11:13:59', '2025-11-14 11:13:59');
+INSERT INTO `departments` (`dept_id`, `dept_name`, `description`, `created_at`, `updated_at`) VALUES (6, '耳鼻喉科', '耳鼻喉科科室', '2025-11-14 11:13:59', '2025-11-14 11:13:59');
+INSERT INTO `departments` (`dept_id`, `dept_name`, `description`, `created_at`, `updated_at`) VALUES (7, '口腔科', '口腔科科室', '2025-11-14 11:13:59', '2025-11-14 11:13:59');
+INSERT INTO `departments` (`dept_id`, `dept_name`, `description`, `created_at`, `updated_at`) VALUES (8, '皮肤科', '皮肤科科室', '2025-11-14 11:13:59', '2025-11-14 11:13:59');
 
 -- ----------------------------
 -- Table structure for doctor_schedules
@@ -100,19 +105,20 @@ DROP TABLE IF EXISTS `doctors`;
 CREATE TABLE `doctors`  (
   `doctor_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '医生ID',
   `user_id` bigint(20) NOT NULL COMMENT '用户ID',
-  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '医生姓名',
-  `department` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '所属科室',
+  `doctor_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '医生姓名',
+  `dept_id` bigint(20) NOT NULL COMMENT '所属科室ID',
   `title` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '职称',
   `specialty` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '专长',
-  `intro` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '医生简介',
+  `introduction` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '医生简介',
   `available_status` tinyint(4) NULL DEFAULT 1 COMMENT '出诊状态：0-不出诊，1-出诊',
   `created_at` datetime NULL COMMENT '创建时间',
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`doctor_id`) USING BTREE,
   UNIQUE INDEX `user_id`(`user_id`) USING BTREE,
-  INDEX `idx_doctors_department`(`department`) USING BTREE,
+  INDEX `idx_doctors_dept_id`(`dept_id`) USING BTREE,
   INDEX `idx_doctors_available_status`(`available_status`) USING BTREE,
-  CONSTRAINT `doctors_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE RESTRICT
+  CONSTRAINT `doctors_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `doctors_ibfk_2` FOREIGN KEY (`dept_id`) REFERENCES `departments` (`dept_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '医生表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------

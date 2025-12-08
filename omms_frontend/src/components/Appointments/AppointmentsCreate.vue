@@ -132,8 +132,8 @@ const onSubmit = async () => {
       deptId: selectedDept.value.id,
       doctorId: selectedDoctor.value.id,
       scheduleId: selectedSchedule.value.id,
+      apptTime: `${selectedSchedule.value.date} ${selectedSchedule.value.startTime.length === 5 ? selectedSchedule.value.startTime + ':00' : selectedSchedule.value.startTime}`,
       symptom: symptomDesc.value,
-      patientId: 1 // Mock ID
     }
 
     const res = await createAppointment(payload)
@@ -144,6 +144,8 @@ const onSubmit = async () => {
         props.refreshAppointments()
       }
       currentStep.value++ // Move to success step (or just show result)
+    } else {
+      message.error(res.message || '预约失败，请检查信息后重试')
     }
   } catch {
     message.error('预约失败，请重试')
@@ -257,14 +259,14 @@ const reset = () => {
                 :key="sche.id"
                 hoverable
                 class="selection-card schedule-card"
-                :class="{ 'disabled': sche.booked >= sche.maxAppointments }"
-                @click="sche.booked < sche.maxAppointments && onSelectSchedule(sche)"
+                :class="{ 'disabled': sche.bookedCount >= sche.totalQuota }"
+                @click="sche.bookedCount < sche.totalQuota && onSelectSchedule(sche)"
               >
                 <div class="schedule-date">{{ sche.date }}</div>
                 <div class="schedule-time">{{ sche.startTime }} - {{ sche.endTime }}</div>
                 <div class="schedule-status">
-                  剩余号源: <span :class="sche.booked >= sche.maxAppointments ? 'text-red' : 'text-green'">
-                    {{ sche.maxAppointments - sche.booked }}
+                  剩余号源: <span :class="sche.bookedCount >= sche.totalQuota ? 'text-red' : 'text-green'">
+                    {{ sche.availableQuota }}
                   </span>
                 </div>
               </a-card>

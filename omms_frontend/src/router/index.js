@@ -9,7 +9,6 @@ import AppointmentsManagement from '@/views/AppointmentsManagement.vue'
 import RecordsManagement from '@/views/RecordsManagement.vue'
 import PharmacyManagement from '@/views/PharmacyManagement.vue'
 import InpatientManagement from '@/views/InpatientManagement.vue'
-import PaymentsManagement from '@/views/PaymentsManagement.vue'
 import ReportsManagement from '@/views/ReportsManagement.vue'
 
 const router = createRouter({
@@ -153,9 +152,9 @@ const router = createRouter({
             label: '处方',
             children: [
               { key: 'prescriptions_list', label: '处方列表' },
-              { key: 'prescriptions_review', label: '处方审核' },
-              { key: 'prescriptions_dispense', label: '发药记录' },
-              { key: 'prescriptions_status', label: '处方状态' },
+              { key: 'prescriptions_pending', label: '待审核' },
+              { key: 'prescriptions_approved', label: '已审核' },
+              { key: 'prescriptions_dispensed', label: '已发药' },
             ]
           },
           {
@@ -165,7 +164,6 @@ const router = createRouter({
               { key: 'suppliers_list', label: '供应商列表' },
               { key: 'suppliers_create', label: '新建供应商' },
               { key: 'suppliers_orders', label: '采购订单' },
-              { key: 'suppliers_reconciliation', label: '供应商对账' },
             ]
           },
         ],
@@ -210,46 +208,46 @@ const router = createRouter({
         ],
       },
     },
-    {
-      path: '/payments',
-      name: 'payments',
-      component: PaymentsManagement,
-      meta: {
-        requiresAuth: true,
-        title: '支付管理',
-        sidebar: [
-          {
-            key: 'sub_transactions',
-            label: '交易记录',
-            children: [
-              { key: 'transactions_list', label: '订单列表' },
-              { key: 'transactions_by_status', label: '按状态' },
-              { key: 'transactions_abnormal', label: '异常订单' },
-              { key: 'transactions_export', label: '导出CSV' },
-            ]
-          },
-          {
-            key: 'sub_refunds',
-            label: '退款处理',
-            children: [
-              { key: 'refunds_apply', label: '退款申请' },
-              { key: 'refunds_review', label: '退款审核' },
-              { key: 'refunds_records', label: '退款记录' },
-            ]
-          },
-          {
-            key: 'sub_methods',
-            label: '支付方式',
-            children: [
-              { key: 'methods_settings', label: '支付方式设置' },
-              { key: 'methods_channels', label: '渠道配置' },
-              { key: 'methods_sandbox', label: '沙箱参数' },
-              { key: 'methods_signature', label: '签名校验' },
-            ]
-          },
-        ],
-      },
-    },
+    //{
+    //  path: '/payments',
+    //  name: 'payments',
+    //  component: PaymentsManagement,
+    //  meta: {
+    //    requiresAuth: true,
+    //    title: '支付管理',
+    //    sidebar: [
+    //      {
+    //        key: 'sub_transactions',
+    //        label: '交易记录',
+    //        children: [
+    //          { key: 'transactions_list', label: '订单列表' },
+    //          { key: 'transactions_by_status', label: '按状态' },
+    //          { key: 'transactions_abnormal', label: '异常订单' },
+    //          { key: 'transactions_export', label: '导出CSV' },
+    //        ]
+    //      },
+    //      {
+    //        key: 'sub_refunds',
+    //        label: '退款处理',
+    //        children: [
+    //          { key: 'refunds_apply', label: '退款申请' },
+    //          { key: 'refunds_review', label: '退款审核' },
+    //          { key: 'refunds_records', label: '退款记录' },
+    //        ]
+    //      },
+    //      {
+    //        key: 'sub_methods',
+    //        label: '支付方式',
+    //        children: [
+    //          { key: 'methods_settings', label: '支付方式设置' },
+    //          { key: 'methods_channels', label: '渠道配置' },
+    //          { key: 'methods_sandbox', label: '沙箱参数' },
+    //          { key: 'methods_signature', label: '签名校验' },
+    //        ]
+    //      },
+    //    ],
+    //  },
+    //},
     {
       path: '/reports',
       name: 'reports',
@@ -317,18 +315,18 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore()
 
-  const isGuestOnly = to.meta?.guestOnly === true
-  const isAuthenticated = !!auth.isAuthenticated
-
-  if (!isAuthenticated && !isGuestOnly) {
-    next({ path: '/login', query: { redirect: to.fullPath } })
-    return
+  if (to.meta?.requiresAuth) {
+    const ok = await auth.validate()
+    if (!ok) {
+      next({ path: '/login', query: { redirect: to.fullPath } })
+      return
+    }
   }
 
-  if (isGuestOnly && isAuthenticated) {
+  if (to.meta?.guestOnly && auth.isAuthenticated) {
     next({ path: '/' })
     return
   }

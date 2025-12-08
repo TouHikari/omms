@@ -51,17 +51,93 @@ def reset_schema_with_sql(settings_obj, sql_path: Path) -> None:
     conn.close()
 
 
+def migrate_schema_with_mysql(settings_obj) -> None:
+    import pymysql
+    conn = pymysql.connect(
+        host=settings_obj.MYSQL_SERVER,
+        user=settings_obj.MYSQL_USER,
+        password=settings_obj.MYSQL_PASSWORD,
+        database=settings_obj.MYSQL_DB,
+        port=settings_obj.MYSQL_PORT,
+        charset="utf8mb4",
+        autocommit=False,
+    )
+    cur = conn.cursor()
+    def table_exists(name: str) -> bool:
+        cur.execute("SHOW TABLES LIKE %s", (name,))
+        return cur.fetchone() is not None
+    def column_exists(table: str, column: str) -> bool:
+        cur.execute(f"SHOW COLUMNS FROM `{table}` LIKE %s", (column,))
+        return cur.fetchone() is not None
+    if table_exists("departments"):
+        if not column_exists("departments", "parent_id"):
+            cur.execute("ALTER TABLE departments ADD COLUMN parent_id BIGINT(20) NULL DEFAULT NULL AFTER description")
+        if not column_exists("departments", "sort_order"):
+            cur.execute("ALTER TABLE departments ADD COLUMN sort_order INT(11) NULL DEFAULT 0 AFTER parent_id")
+    if table_exists("doctors"):
+        if not column_exists("doctors", "doctor_name"):
+            if column_exists("doctors", "name"):
+                cur.execute("ALTER TABLE doctors CHANGE COLUMN name doctor_name VARCHAR(50) NOT NULL")
+            else:
+                cur.execute("ALTER TABLE doctors ADD COLUMN doctor_name VARCHAR(50) NOT NULL AFTER user_id")
+        if not column_exists("doctors", "dept_id"):
+            cur.execute("ALTER TABLE doctors ADD COLUMN dept_id BIGINT(20) NULL AFTER doctor_name")
+            try:
+                cur.execute("ALTER TABLE doctors ADD INDEX idx_doctors_dept_id (dept_id)")
+            except Exception:
+                pass
+            try:
+                cur.execute("ALTER TABLE doctors ADD CONSTRAINT doctors_ibfk_2 FOREIGN KEY (dept_id) REFERENCES departments(dept_id) ON DELETE RESTRICT ON UPDATE RESTRICT")
+            except Exception:
+                pass
+            try:
+                cur.execute("UPDATE doctors d LEFT JOIN departments dep ON dep.dept_name = d.department SET d.dept_id = dep.dept_id")
+            except Exception:
+                pass
+        if column_exists("doctors", "intro") and not column_exists("doctors", "introduction"):
+            cur.execute("ALTER TABLE doctors CHANGE COLUMN intro introduction TEXT NULL")
+        if column_exists("doctors", "department"):
+            try:
+                cur.execute("ALTER TABLE doctors DROP COLUMN department")
+            except Exception:
+                pass
+    if table_exists("doctor_schedules"):
+        if not column_exists("doctor_schedules", "booked"):
+            cur.execute("ALTER TABLE doctor_schedules ADD COLUMN booked INT(11) NULL DEFAULT 0 AFTER max_appointments")
+    if table_exists("appointments"):
+        if not column_exists("appointments", "schedule_id"):
+            cur.execute("ALTER TABLE appointments ADD COLUMN schedule_id BIGINT(20) NULL AFTER doctor_id")
+            try:
+                cur.execute("ALTER TABLE appointments ADD INDEX idx_appointments_schedule_id (schedule_id)")
+            except Exception:
+                pass
+            try:
+                cur.execute("ALTER TABLE appointments ADD CONSTRAINT appointments_ibfk_3 FOREIGN KEY (schedule_id) REFERENCES doctor_schedules(schedule_id) ON DELETE CASCADE ON UPDATE RESTRICT")
+            except Exception:
+                pass
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
 async def seed_app_tables(
     init_db_func, session_factory, engine_obj, seed_count: int = 20
 ) -> None:
     from sqlalchemy import delete, text
     from app.models.record import MedicalRecord, RecordTemplate
+    from app.models.appointment import Department, Doctor, Schedule, Appointment
+    from app.models.patient import Patient
     from app.core.security import get_password_hash
 
     await init_db_func()
     async with session_factory() as session:
         await session.execute(delete(MedicalRecord))
         await session.execute(delete(RecordTemplate))
+        await session.execute(delete(Appointment))
+        await session.execute(delete(Schedule))
+        await session.execute(delete(Doctor))
+        await session.execute(delete(Department))
+        await session.execute(delete(Patient))
         tpl1 = RecordTemplate(
             name="内科常用模板",
             scope="内科",
@@ -108,6 +184,44 @@ async def seed_app_tables(
         )
         session.add_all([tpl1, tpl2])
         await session.commit()
+        
+        # Seed departments
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        await session.execute(text("DELETE FROM departments"))
+        await session.execute(
+            text(
+                """
+                INSERT INTO departments (dept_id, dept_name, description, sort_order, created_at, updated_at)
+                VALUES (:id, :name, :desc, :sort, :created, :updated)
+                """
+            ),
+            {
+                "id": 1,
+                "name": "内科",
+                "desc": "内科科室",
+                "sort": 1,
+                "created": now,
+                "updated": now,
+            },
+        )
+        await session.execute(
+            text(
+                """
+                INSERT INTO departments (dept_id, dept_name, description, sort_order, created_at, updated_at)
+                VALUES (:id, :name, :desc, :sort, :created, :updated)
+                """
+            ),
+            {
+                "id": 2,
+                "name": "外科",
+                "desc": "外科科室",
+                "sort": 2,
+                "created": now,
+                "updated": now,
+            },
+        )
+        await session.commit()
+        
         now = datetime.now()
         for i in range(seed_count):
             rid = f"MR-{now.strftime('%Y%m%d')}-{random.randint(1000, 9999)}"
@@ -116,9 +230,9 @@ async def seed_app_tables(
             )
             record = MedicalRecord(
                 id=rid,
-                dept_id=random.choice([1, 2, 3]),
-                doctor_id=random.choice([1, 2, 3]),
-                patient_id=random.choice([10001, 10002, 10003]),
+                dept_id=random.choice([1, 2]),
+                doctor_id=1,
+                patient_id=1,
                 patient_name=random.choice(["张三", "李四", "王五"]),
                 created_at=created_at,
                 status=random.choice(["draft", "finalized", "cancelled"]),
@@ -145,9 +259,11 @@ async def seed_app_tables(
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             async def upsert_user(username: str, password: str, email: str | None, real_name: str, role_id: int, phone: str | None = None) -> int:
+                # 查找是否存在
                 res = await session.execute(text("SELECT user_id FROM users WHERE username=:u OR email=:u"), {"u": username})
                 row = res.first()
                 if not row:
+                    # 新增
                     await session.execute(
                         text(
                             """
@@ -166,6 +282,27 @@ async def seed_app_tables(
                             "role_id": role_id,
                         },
                     )
+                else:
+                    # 更新密码与基础信息，确保内置账号可用
+                    await session.execute(
+                        text(
+                            """
+                            UPDATE users
+                            SET password=:password, email=:email, phone=:phone, real_name=:real_name,
+                                status=1, updated_at=:updated, role_id=:role_id
+                            WHERE user_id=:user_id
+                            """
+                        ),
+                        {
+                            "password": get_password_hash(password),
+                            "email": email,
+                            "phone": phone,
+                            "real_name": real_name,
+                            "updated": now,
+                            "role_id": role_id,
+                            "user_id": int(row[0]),
+                        },
+                    )
                 res2 = await session.execute(text("SELECT user_id FROM users WHERE username=:username"), {"username": username})
                 return int(res2.first()[0])
 
@@ -179,17 +316,16 @@ async def seed_app_tables(
                 await session.execute(
                     text(
                         """
-                        INSERT INTO doctors (user_id,name,department,title,specialty,intro,available_status,created_at,updated_at)
-                        VALUES (:uid,:name,:dept,:title,:spec,:intro,1,:created,:updated)
+                        INSERT INTO doctors (user_id,doctor_name,dept_id,title,specialty,available_status,created_at,updated_at)
+                        VALUES (:uid,:name,:dept_id,:title,:spec,1,:created,:updated)
                         """
                     ),
                     {
                         "uid": doc_uid,
                         "name": "李医生",
-                        "dept": "内科",
+                        "dept_id": 1,
                         "title": "主治医师",
                         "spec": "呼吸内科",
-                        "intro": "",
                         "created": now,
                         "updated": now,
                     },
@@ -223,8 +359,8 @@ async def seed_app_tables(
                 await session.execute(
                     text(
                         """
-                        INSERT INTO patients (user_id,name,gender,birthday,id_card,address,emergency_contact,emergency_phone,created_at,updated_at)
-                        VALUES (:uid,:name,:gender,:birthday,:id_card,:address,:ec,:ep,:created,:updated)
+                        INSERT INTO patients (user_id,name,gender,birthday,id_card,created_at,updated_at)
+                        VALUES (:uid,:name,:gender,:birthday,:id_card,:created,:updated)
                         """
                     ),
                     {
@@ -233,13 +369,52 @@ async def seed_app_tables(
                         "gender": 1,
                         "birthday": "1990-01-01",
                         "id_card": "110101199001010000",
-                        "address": "北京市东城区XX路XX号",
-                        "ec": "李四",
-                        "ep": "13800000002",
                         "created": now,
                         "updated": now,
                     },
                 )
+            
+            # Seed schedules
+            work_date = now.split()[0]
+            await session.execute(text("DELETE FROM doctor_schedules"))
+            await session.execute(
+                text(
+                    """
+                    INSERT INTO doctor_schedules (doctor_id, work_date, start_time, end_time, max_appointments, booked, status, created_at, updated_at)
+                    VALUES (:doctor_id, :work_date, :start_time, :end_time, :max_appointments, 0, 1, :created, :updated)
+                    """
+                ),
+                {
+                    "doctor_id": 1,
+                    "work_date": work_date,
+                    "start_time": "08:00:00",
+                    "end_time": "12:00:00",
+                    "max_appointments": 10,
+                    "created": now,
+                    "updated": now,
+                },
+            )
+            
+            # Seed appointments
+            await session.execute(text("DELETE FROM appointments"))
+            await session.execute(
+                text(
+                    """
+                    INSERT INTO appointments (patient_id, doctor_id, schedule_id, appt_time, status, symptom_desc, created_at, updated_at)
+                    VALUES (:patient_id, :doctor_id, :schedule_id, :appt_time, :status, :symptom_desc, :created, :updated)
+                    """
+                ),
+                {
+                    "patient_id": 1,
+                    "doctor_id": 1,
+                    "schedule_id": 1,
+                    "appt_time": f"{work_date} 09:00:00",
+                    "status": 0,
+                    "symptom_desc": "发热咳嗽",
+                    "created": now,
+                    "updated": now,
+                },
+            )
 
             await session.commit()
         except Exception:
@@ -252,7 +427,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         prog="init_db", description="Initialize database schema and seed demo data"
     )
-    parser.add_argument("--mode", choices=["app", "full"], default="app")
+    parser.add_argument("--mode", choices=["app", "full", "migrate"], default="app")
     parser.add_argument(
         "--sql", default=str((ROOT.parent / "docs" / "omms.sql").resolve())
     )
@@ -266,10 +441,10 @@ def main() -> None:
         os.environ["DATABASE_URL"] = args.dsn
     elif args.sqlite:
         os.environ["DATABASE_URL"] = (
-            f"sqlite+aiosqlite:///{(ROOT / 'omms_dev.db').resolve().as_posix()}"
+            f"sqlite+aiosqlite:///{(ROOT / 'test.db').resolve().as_posix()}"
         )
 
-    from app.settings import settings as settings_obj
+    from app.core.settings import settings as settings_obj
     from app.db.session import (
         init_db as init_db_func,
         AsyncSessionLocal as session_factory,
@@ -278,6 +453,8 @@ def main() -> None:
 
     if args.mode == "full" and not args.skip_sql:
         reset_schema_with_sql(settings_obj, Path(args.sql))
+    else:
+        migrate_schema_with_mysql(settings_obj)
     asyncio.run(
         seed_app_tables(init_db_func, session_factory, engine_obj, args.seed_count)
     )

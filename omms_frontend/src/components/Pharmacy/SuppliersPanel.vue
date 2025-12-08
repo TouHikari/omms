@@ -8,6 +8,7 @@ const props = defineProps({
   suppliers: { type: Array, default: () => [] },
   orders: { type: Array, default: () => [] },
   onCreated: { type: Function },
+  setMenu: { type: Function },
 })
 
 const mode = computed(() => {
@@ -47,7 +48,8 @@ async function submit() {
       contact.value = ''
       phone.value = ''
       address.value = ''
-      props.onCreated && props.onCreated()
+      props.onCreated && props.onCreated(res.data)
+      props.setMenu && props.setMenu('suppliers_list')
     } else {
       message.error(res.message || '创建失败')
     }
@@ -63,21 +65,24 @@ const supplierNameMap = computed(() => {
   for (const s of props.suppliers) map.set(s.id, s.name)
   return map
 })
+
+function onSwitch(key) {
+  props.setMenu && props.setMenu(key)
+}
 </script>
 
 <template>
   <a-card>
     <a-space style="margin-bottom: 12px; width: 100%; justify-content: space-between">
       <div>
-        <a-button type="link">供应商列表</a-button>
-        <a-button type="link">新建供应商</a-button>
-        <a-button type="link">采购订单</a-button>
-        <a-button type="link">供应商对账</a-button>
+        <a-button type="link" @click="onSwitch('suppliers_list')">供应商列表</a-button>
+        <a-button type="link" @click="onSwitch('suppliers_create')">新建供应商</a-button>
+        <a-button type="link" @click="onSwitch('suppliers_orders')">采购订单</a-button>
       </div>
     </a-space>
 
     <div v-if="mode === 'list'">
-      <a-table :columns="columns" :data-source="suppliers" rowKey="id" />
+      <a-table :columns="columns" :data-source="suppliers" :scroll="{ x: 860 }" size="small" rowKey="id" />
     </div>
 
     <div v-else-if="mode === 'create'" class="create-form">
@@ -101,7 +106,7 @@ const supplierNameMap = computed(() => {
     </div>
 
     <div v-else-if="mode === 'orders'">
-      <a-table :columns="orderColumns" :data-source="orders" rowKey="id">
+      <a-table :columns="orderColumns" :data-source="orders" :scroll="{ x: 860 }" size="small" rowKey="id">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'supplierId'">
             {{ supplierNameMap.get(record.supplierId) || record.supplierId }}

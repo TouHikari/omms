@@ -6,7 +6,36 @@ export const useAuthStore = defineStore('auth', () => {
   const role = ref(localStorage.getItem('omms_role'))
   const user = ref(null)
 
-  const isAuthenticated = computed(() => !!token.value)
+  function decodeJwtPayload(t) {
+    const parts = String(t || '').split('.')
+    if (parts.length < 2) throw new Error('invalid token')
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const pad = base64.length % 4
+    const padded = base64 + (pad ? '='.repeat(4 - pad) : '')
+    const json = atob(padded)
+    return JSON.parse(json)
+  }
+
+  function isTokenExpired(t) {
+    const s = String(t || '')
+    if (s.startsWith('dev-')) return false
+    const parts = s.split('.')
+    if (parts.length < 2) return false
+    try {
+      const payload = decodeJwtPayload(s)
+      const exp = payload && payload.exp
+      if (!exp) return false
+      const now = Math.floor(Date.now() / 1000)
+      return exp <= now
+    } catch {
+      return false
+    }
+  }
+
+  const isAuthenticated = computed(() => {
+    const t = token.value
+    return !!t && !isTokenExpired(t)
+  })
 
   const LOCAL_USERS = [
     { username: 'admin', password: 'admin123', role: 'admin', user: { name: '管理员', id: 1 } },
@@ -73,6 +102,7 @@ export const useAuthStore = defineStore('auth', () => {
         'Authorization': `Bearer ${token.value}`,
       },
     })
+    if (res.status === 401) throw new Error('未登录')
     const json = await res.json()
     if (json.code !== 200) throw new Error(json.message || '获取用户信息失败')
     const u = json.data?.user || json.data
@@ -97,6 +127,24 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
   }
 
+  async function validate() {
+    const t = token.value
+    if (!t) return false
+    if (isTokenExpired(t)) {
+      logout()
+      return false
+    }
+    if (!user.value) {
+      try {
+        await fetchMe()
+      } catch {
+        logout()
+        return false
+      }
+    }
+    return true
+  }
+
   watch(token, (t) => {
     if (t) localStorage.setItem('omms_token', t)
     else localStorage.removeItem('omms_token')
@@ -107,5 +155,5 @@ export const useAuthStore = defineStore('auth', () => {
     else localStorage.removeItem('omms_role')
   })
 
-  return { token, role, user, isAuthenticated, login, loginWithPassword, loginWithApi, registerWithApi, fetchMe, logout }
+  return { token, role, user, isAuthenticated, login, loginWithPassword, loginWithApi, registerWithApi, fetchMe, logout, validate }
 })

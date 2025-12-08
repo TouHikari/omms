@@ -17,7 +17,7 @@ from app.schemas.auth import (
     RegisterResponse,
     UserOut,
 )
-from app.settings import settings
+from app.core.settings import settings
 
 
 router = APIRouter(tags=["auth"])
@@ -33,7 +33,7 @@ async def register(payload: RegisterRequest, session: AsyncSession = Depends(get
     exists = await session.execute(select(User).where(User.username == payload.username))
     if exists.scalars().first():
         return err(400, "用户名已存在")
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now()
     user = User(
         username=payload.username,
         password=get_password_hash(payload.password),
@@ -75,9 +75,10 @@ async def login(payload: LoginRequest, session: AsyncSession = Depends(get_sessi
         return err(401, "用户名或密码错误")
     if user.status != 1:
         return err(403, "用户已禁用")
+    # 验证用户密码
     if not verify_password(payload.password, user.password):
         return err(401, "用户名或密码错误")
-    user.last_login_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    user.last_login_at = datetime.now()
     await session.commit()
     expires_in = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     token = create_access_token(
