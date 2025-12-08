@@ -9,6 +9,7 @@ class RecordCreate(BaseModel):
     patientId: Optional[int] = Field(default=None, description="患者ID")
     patientName: Optional[str] = Field(default=None, description="患者姓名，仅在缺少ID时记录")
     time: Optional[str] = Field(default=None, description="就诊时间，格式 HH:mm，默认 10:00")
+    createdAt: Optional[str] = Field(default=None, description="创建时间，格式 YYYY-MM-DD HH:mm；不传则使用当天与 time")
     chiefComplaint: Optional[str] = Field(default=None, description="主诉")
     diagnosis: Optional[str] = Field(default=None, description="诊断")
     prescriptions: Optional[List[str]] = Field(default=None, description="处方项目")
@@ -126,6 +127,9 @@ class RecordStatusResponse(BaseModel):
     message: str
     data: Optional[RecordStatusData]
 
+class RecordStatusUpdate(BaseModel):
+    status: str = Field(description="病历状态，取值 draft|finalized|cancelled")
+
 
 class DeleteRecordResponse(BaseModel):
     code: int
@@ -156,4 +160,31 @@ class RecordTemplateResponse(BaseModel):
 class TemplateDeleteResponse(BaseModel):
     code: int
     message: str
-    data: Optional[dict]
+    data: dict
+
+class RecordsStatsData(BaseModel):
+    total: int
+    draft: int
+    finalized: int
+    cancelled: int
+    withLab: int
+    withImaging: int
+
+class RecordsStatsResponse(BaseModel):
+    code: int
+    message: str
+    data: RecordsStatsData
+
+class DictionariesData(BaseModel):
+    imaging: List[str]
+    labs: List[str]
+
+class DictionariesResponse(BaseModel):
+    code: int
+    message: str
+    data: DictionariesData
+
+class DictionaryArrayResponse(BaseModel):
+    code: int
+    message: str
+    data: List[str]
