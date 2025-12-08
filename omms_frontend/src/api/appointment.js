@@ -1,86 +1,105 @@
-import { departments, doctors, schedules, appointments } from './mockData';
 
-const LATENCY = 500;
+import { useAuthStore } from '@/stores/auth'
 
-export const getDepartments = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ code: 200, data: departments, message: 'success' });
-    }, LATENCY);
-  });
-};
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
-export const getAllDoctors = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ code: 200, data: doctors, message: 'success' });
-    }, LATENCY);
-  });
-};
+function authHeaders() {
+  const auth = useAuthStore()
+  const headers = { 'Content-Type': 'application/json' }
+  if (auth.token) headers['Authorization'] = `Bearer ${auth.token}`
+  return headers
+}
 
-export const getDoctorsByDept = (deptId) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const filtered = doctors.filter(d => d.deptId === deptId);
-      resolve({ code: 200, data: filtered, message: 'success' });
-    }, LATENCY);
-  });
-};
+function pad4(n) {
+  const s = String(n || '')
+  return s.length >= 4 ? s.slice(-4) : s.padStart(4, '0')
+}
 
-export const getDoctorSchedules = (doctorId) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const filtered = schedules.filter(s => s.doctorId === doctorId);
-      resolve({ code: 200, data: filtered, message: 'success' });
-    }, LATENCY);
-  });
-};
+function toDepartmentList(data) {
+  const list = data?.list || []
+  return list.map(d => ({ id: d.deptId, name: d.deptName, description: d.deptDesc }))
+}
 
-export const getAppointments = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ code: 200, data: appointments, message: 'success' });
-    }, LATENCY);
-  });
-};
+function toDoctorList(data) {
+  const list = data?.list || []
+  return list.map(d => ({ id: d.doctorId, name: d.doctorName, deptId: d.deptId, deptName: d.deptName, title: d.title, specialty: d.specialty, introduction: d.introduction, createdAt: d.createdAt, updatedAt: d.updatedAt }))
+}
 
-export const updateAppointmentStatus = (id, status) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const idx = appointments.findIndex(a => a.id === id);
-      if (idx !== -1) {
-        appointments[idx].status = status;
-        resolve({ code: 200, data: appointments[idx], message: 'success' });
-      } else {
-        resolve({ code: 404, message: 'Appointment not found' });
-      }
-    }, LATENCY);
-  });
-};
+function toScheduleList(data) {
+  const list = data?.list || []
+  return list.map(s => ({ id: s.scheduleId, doctorId: s.doctorId, doctorName: s.doctorName, deptId: s.deptId, deptName: s.deptName, date: s.workDate, startTime: s.startTime, endTime: s.endTime, totalQuota: s.totalQuota, bookedCount: s.bookedCount, availableQuota: s.availableQuota, status: s.status }))
+}
 
-export const createAppointment = (data) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const dept = departments.find(d => d.id === data.deptId)
-      const doc = doctors.find(d => d.id === data.doctorId)
-      const sche = schedules.find(s => s.id === data.scheduleId)
-      const dateStr = sche?.date || new Date().toISOString().split('T')[0]
-      const rand = String(Math.floor(Math.random() * 10000)).padStart(4, '0')
-      const id = `R-${dateStr.replaceAll('-', '')}-${rand}`
-      const record = {
-        id,
-        patient: '测试患者',
-        department: dept?.name || '未知科室',
-        doctor: doc?.name || '未知医生',
-        time: `${dateStr} ${sche?.startTime || '09:00'}`,
-        status: 'pending',
-        symptom: data?.symptom || ''
-      }
-      appointments.unshift(record)
-      resolve({ code: 200, data: record, message: '预约成功' })
-    }, LATENCY);
-  });
-};
+function toAppointmentsList(data) {
+  const list = data?.list || []
+  return list.map(a => {
+    const dateStr = String(a.apptTime || '').slice(0, 10).replaceAll('-', '')
+    const id = `R-${dateStr}-${pad4(a.apptId)}`
+    const statusStr = a.status === 1 ? 'completed' : a.status === 2 ? 'cancelled' : 'pending'
+    return { id, apptId: a.apptId, patient: a.patientName, department: a.deptName, doctor: a.doctorName, time: a.apptTime, status: statusStr, symptom: a.symptomDesc }
+  })
+}
+
+export async function getDepartments() {
+  const res = await fetch(`${API_BASE_URL}/departments?page=1&pageSize=100`, { method: 'GET', headers: authHeaders() })
+  const json = await res.json()
+  if (json.code !== 200) return { code: json.code || 500, message: json.message || 'failed' }
+  return { code: 200, data: toDepartmentList(json.data), message: json.message || 'success' }
+}
+
+export async function getAllDoctors() {
+  const res = await fetch(`${API_BASE_URL}/doctors?page=1&pageSize=100`, { method: 'GET', headers: authHeaders() })
+  const json = await res.json()
+  if (json.code !== 200) return { code: json.code || 500, message: json.message || 'failed' }
+  return { code: 200, data: toDoctorList(json.data), message: json.message || 'success' }
+}
+
+export async function getDoctorsByDept(deptId) {
+  const res = await fetch(`${API_BASE_URL}/doctors?deptId=${encodeURIComponent(deptId)}&page=1&pageSize=100`, { method: 'GET', headers: authHeaders() })
+  const json = await res.json()
+  if (json.code !== 200) return { code: json.code || 500, message: json.message || 'failed' }
+  return { code: 200, data: toDoctorList(json.data), message: json.message || 'success' }
+}
+
+export async function getDoctorSchedules(doctorId) {
+  const res = await fetch(`${API_BASE_URL}/schedules?doctorId=${encodeURIComponent(doctorId)}&page=1&pageSize=100`, { method: 'GET', headers: authHeaders() })
+  const json = await res.json()
+  if (json.code !== 200) return { code: json.code || 500, message: json.message || 'failed' }
+  return { code: 200, data: toScheduleList(json.data), message: json.message || 'success' }
+}
+
+export async function getAppointments() {
+  const res = await fetch(`${API_BASE_URL}/appointments?page=1&pageSize=100`, { method: 'GET', headers: authHeaders() })
+  const json = await res.json()
+  if (json.code !== 200) return { code: json.code || 500, message: json.message || 'failed' }
+  return { code: 200, data: toAppointmentsList(json.data), message: json.message || 'success' }
+}
+
+export async function updateAppointmentStatus(apptId, status) {
+  const statusMap = { pending: 0, completed: 1, cancelled: 2 }
+  const payload = { status: statusMap[status] }
+  const res = await fetch(`${API_BASE_URL}/appointments/${encodeURIComponent(apptId)}/status`, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify(payload) })
+  const json = await res.json()
+  if (json.code !== 200) return { code: json.code || res.status || 500, message: json.message || 'failed' }
+  const a = json.data
+  const dateStr = String(a.apptTime || '').slice(0, 10).replaceAll('-', '')
+  const id = `R-${dateStr}-${pad4(a.apptId)}`
+  const statusStr = a.status === 1 ? 'completed' : a.status === 2 ? 'cancelled' : 'pending'
+  return { code: 200, data: { id, apptId: a.apptId, patient: a.patientName, department: a.deptName, doctor: a.doctorName, time: a.apptTime, status: statusStr, symptom: a.symptomDesc }, message: json.message || 'success' }
+}
+
+export async function createAppointment(data) {
+  const auth = useAuthStore()
+  const apptTime = data.apptTime || `${data.date} ${data.startTime.length === 5 ? data.startTime + ':00' : data.startTime}`
+  const payload = { patientId: data.patientId || auth.user?.id, doctorId: data.doctorId, scheduleId: data.scheduleId, apptTime, symptomDesc: data.symptom || '' }
+  const res = await fetch(`${API_BASE_URL}/appointments`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) })
+  const json = await res.json()
+  if (json.code !== 200) return { code: json.code || res.status || 500, message: json.message || 'failed' }
+  const a = json.data
+  const dateStr = String(a.apptTime || '').slice(0, 10).replaceAll('-', '')
+  const id = `R-${dateStr}-${pad4(a.apptId)}`
+  return { code: 200, data: { id, apptId: a.apptId, patient: a.patientName, department: a.deptName, doctor: a.doctorName, time: a.apptTime, status: a.status === 1 ? 'completed' : a.status === 2 ? 'cancelled' : 'pending', symptom: a.symptomDesc }, message: json.message || '预约成功' }
+}
 
 export const createDepartment = (data) => {
   return new Promise((resolve) => {

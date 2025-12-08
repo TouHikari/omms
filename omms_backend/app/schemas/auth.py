@@ -63,4 +63,4 @@ class RegisterResponse(BaseModel):
 class LoginResponse(BaseModel):
     code: int
     message: str
-    data: LoginData
+    data: Optional[LoginData]

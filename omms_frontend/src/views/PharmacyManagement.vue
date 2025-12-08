@@ -182,7 +182,7 @@ const panelMenuMap = { inventory: 'inventory_drugs', prescriptions: 'prescriptio
           </div>
         </a-card>
 
-        <a-card class="metric-card metric-pending" :bordered="false" @click="setMenu('prescriptions_review')">
+        <a-card class="metric-card metric-pending" :bordered="false" @click="setMenu('prescriptions_pending')">
           <div class="metric">
             <div class="metric-icon-wrap">
               <FileTextOutlined class="metric-icon" />
@@ -201,11 +201,11 @@ const panelMenuMap = { inventory: 'inventory_drugs', prescriptions: 'prescriptio
     </template>
 
     <template #panel-prescriptions>
-      <PrescriptionsPanel :current-menu="currentMenu" :prescriptions="prescriptions" :update-status="onUpdatePrescriptionStatus" />
+      <PrescriptionsPanel :current-menu="currentMenu" :prescriptions="prescriptions" :update-status="onUpdatePrescriptionStatus" :set-menu="setMenu" />
     </template>
 
     <template #panel-suppliers>
-      <SuppliersPanel :current-menu="currentMenu" :suppliers="suppliers" :orders="supplierOrders" :on-created="onSupplierCreated" />
+      <SuppliersPanel :current-menu="currentMenu" :suppliers="suppliers" :orders="supplierOrders" :on-created="onSupplierCreated" :set-menu="setMenu" />
     </template>
   </PageLayout>
 </template>

@@ -221,6 +221,8 @@ async function submitEdit() {
       :columns="columns"
       :data-source="filteredRecords"
       :pagination="{ current: currentPage, pageSize: pageSize, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'] }"
+      :scroll="{ x: 860 }"
+      size="small"
       rowKey="id"
       @change="onTableChange"
     >

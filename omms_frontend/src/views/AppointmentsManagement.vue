@@ -75,7 +75,9 @@ const metrics = computed(() => {
 
 async function updateStatus(id, status) {
   try {
-    const res = await updateAppointmentStatus(id, status)
+    const target = appointments.value.find(x => x.id === id)
+    const apptId = target?.apptId
+    const res = apptId ? await updateAppointmentStatus(apptId, status) : { code: 400, message: 'invalid id' }
     if (res.code === 200) {
       message.success('状态更新成功')
       const a = appointments.value.find(x => x.id === id)

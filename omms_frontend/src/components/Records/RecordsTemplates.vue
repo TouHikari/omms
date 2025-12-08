@@ -123,10 +123,10 @@ async function submitCreate() {
         </template>
         <a-list :data-source="templates">
           <template #renderItem="{ item }">
-            <a-list-item>
-              <a-list-item-meta :title="item.name" :description="`范围：${item.scope}`" />
-              <div>
-                <a-tag v-for="f in item.fields" :key="f" style="margin-right: 8px">{{ f }}</a-tag>
+            <a-list-item class="tpl-item">
+              <a-list-item-meta :title="item.name" :description="`范围：${item.scope}`" class="tpl-meta" />
+              <div class="tpl-fields">
+                <a-tag v-for="f in item.fields" :key="f">{{ f }}</a-tag>
               </div>
               <template #actions>
                 <a-button type="link" @click="openPreview(item)">预览</a-button>
@@ -251,4 +251,63 @@ async function submitCreate() {
   </div>
 </template>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+@use '@/assets/_variables.scss' as *;
+
+.tpl-meta {
+  min-width: 150px;
+}
+
+.tpl-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 200px;
+}
+
+:deep(.tpl-item) {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+:deep(.ant-list-item) {
+  align-items: flex-start;
+}
+
+:deep(.ant-list-item-meta) {
+  flex: 1 1 auto;
+}
+
+:deep(.ant-list-item-action) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@container (max-width: $breakpoint-sm) {
+  :deep(.ant-list-item-action) {
+    width: 100%;
+    justify-content: flex-start;
+    margin-top: 8px;
+  }
+}
+
+@container (max-width: $breakpoint-md) {
+  :deep(.tpl-item) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  :deep(.tpl-item .ant-list-item-meta) {
+    width: 100%;
+    flex: 0 0 100%;
+  }
+  .tpl-fields {
+    width: 100%;
+  }
+  :deep(.tpl-item .ant-list-item-action) {
+    width: 100%;
+    flex: 0 0 100%;
+  }
+}
+</style>
