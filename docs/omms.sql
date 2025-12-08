@@ -26,7 +26,7 @@ CREATE TABLE `appointments`  (
   `patient_id` bigint(20) NOT NULL COMMENT '患者ID',
   `doctor_id` bigint(20) NOT NULL COMMENT '医生ID',
   `appt_time` datetime NOT NULL COMMENT '预约时间',
-  `status` tinyint(4) NULL DEFAULT 0 COMMENT '状态：0-待就诊，1-已就诊，2-已取消，3-已完成',
+  `status` tinyint(4) NULL DEFAULT 0 COMMENT '状态:0-待就诊,1-已就诊,2-已取消,3-已完成',
   `symptom_desc` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '症状描述',
   `created_at` datetime NULL COMMENT '创建时间',
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -118,6 +118,16 @@ CREATE TABLE `doctors`  (
 -- ----------------------------
 -- Records of doctors
 -- ----------------------------
+
+INSERT INTO `doctors` (`doctor_id`, `user_id`, `name`, `department`, `title`, `specialty`, `intro`, `available_status`, `created_at`) VALUES
+  (1, 2, '张医生', '内科', '主治医师', '呼吸内科', '内科医生', 1, '2025-11-14 11:13:59'),
+  (2, 3, '李医生', '外科', '主治医师', '普外科', '外科医生', 1, '2025-11-14 11:13:59'),
+  (3, 4, '王医生', '儿科', '主治医师', '儿内科', '儿科医生', 1, '2025-11-14 11:13:59'),
+  (4, 5, '赵医生', '妇产科', '主治医师', '妇科', '妇产科医生', 1, '2025-11-14 11:13:59'),
+  (5, 6, '钱医生', '眼科', '主治医师', '眼底病', '眼科医生', 1, '2025-11-14 11:13:59'),
+  (6, 7, '孙医生', '耳鼻喉科', '主治医师', '鼻炎', '耳鼻喉科医生', 1, '2025-11-14 11:13:59'),
+  (7, 8, '周医生', '口腔科', '主治医师', '牙体牙髓', '口腔科医生', 1, '2025-11-14 11:13:59'),
+  (8, 9, '吴医生', '皮肤科', '主治医师', '皮炎湿疹', '皮肤科医生', 1, '2025-11-14 11:13:59');
 
 -- ----------------------------
 -- Table structure for fee_bills
@@ -579,5 +589,15 @@ CREATE TABLE `users`  (
 -- ----------------------------
 INSERT INTO `users` VALUES (1, 'admin', '$2a$10$7J7FqQZ8q3r6s5t4u3i2o1p0o1i2u3y4t5r6e7w8q9r0t1y2u3i', 'admin@medical.com', '13800138000', '系统管理员', 1, '2025-11-14 11:13:45', '2025-11-14 11:13:45', NULL, 1);
 
+
+INSERT INTO `users` (`user_id`, `username`, `password`, `email`, `phone`, `real_name`, `status`, `created_at`, `updated_at`, `last_login_at`, `role_id`) VALUES
+  (2, 'doc_neike', '$2a$10$7J7FqQZ8q3r6s5t4u3i2o1p0o1i2u3y4t5r6e7w8q9r0t1y2u3i', NULL, NULL, '内科医生', 1, '2025-11-14 11:13:59', '2025-11-14 11:13:59', NULL, 2),
+  (3, 'doc_waike', '$2a$10$7J7FqQZ8q3r6s5t4u3i2o1p0o1i2u3y4t5r6e7w8q9r0t1y2u3i', NULL, NULL, '外科医生', 1, '2025-11-14 11:13:59', '2025-11-14 11:13:59', NULL, 2),
+  (4, 'doc_erke', '$2a$10$7J7FqQZ8q3r6s5t4u3i2o1p0o1i2u3y4t5r6e7w8q9r0t1y2u3i', NULL, NULL, '儿科医生', 1, '2025-11-14 11:13:59', '2025-11-14 11:13:59', NULL, 2),
+  (5, 'doc_fuchanke', '$2a$10$7J7FqQZ8q3r6s5t4u3i2o1p0o1i2u3y4t5r6e7w8q9r0t1y2u3i', NULL, NULL, '妇产科医生', 1, '2025-11-14 11:13:59', '2025-11-14 11:13:59', NULL, 2),
+  (6, 'doc_yanke', '$2a$10$7J7FqQZ8q3r6s5t4u3i2o1p0o1i2u3y4t5r6e7w8q9r0t1y2u3i', NULL, NULL, '眼科医生', 1, '2025-11-14 11:13:59', '2025-11-14 11:13:59', NULL, 2),
+  (7, 'doc_erbihouke', '$2a$10$7J7FqQZ8q3r6s5t4u3i2o1p0o1i2u3y4t5r6e7w8q9r0t1y2u3i', NULL, NULL, '耳鼻喉科医生', 1, '2025-11-14 11:13:59', '2025-11-14 11:13:59', NULL, 2),
+  (8, 'doc_kouqiangke', '$2a$10$7J7FqQZ8q3r6s5t4u3i2o1p0o1i2u3y4t5r6e7w8q9r0t1y2u3i', NULL, NULL, '口腔科医生', 1, '2025-11-14 11:13:59', '2025-11-14 11:13:59', NULL, 2),
+  (9, 'doc_pifuke', '$2a$10$7J7FqQZ8q3r6s5t4u3i2o1p0o1i2u3y4t5r6e7w8q9r0t1y2u3i', NULL, NULL, '皮肤科医生', 1, '2025-11-14 11:13:59', '2025-11-14 11:13:59', NULL, 2);
 
 SET FOREIGN_KEY_CHECKS = 1;
