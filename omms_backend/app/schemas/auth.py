@@ -57,7 +57,7 @@ class LoginData(BaseModel):
 class RegisterResponse(BaseModel):
     code: int
     message: str
-    data: UserOut
+    data: Optional[UserOut]
 
 
 class LoginResponse(BaseModel):

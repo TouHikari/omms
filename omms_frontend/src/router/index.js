@@ -8,7 +8,7 @@ import UserInfo from '@/views/UserInfo.vue'
 import AppointmentsManagement from '@/views/AppointmentsManagement.vue'
 import RecordsManagement from '@/views/RecordsManagement.vue'
 import PharmacyManagement from '@/views/PharmacyManagement.vue'
-import InpatientManagement from '@/views/InpatientManagement.vue'
+//import InpatientManagement from '@/views/InpatientManagement.vue'
 import ReportsManagement from '@/views/ReportsManagement.vue'
 
 const router = createRouter({
@@ -42,7 +42,6 @@ const router = createRouter({
               { key: 'kpi_appointments', label: '预约KPI' },
               { key: 'kpi_revenue', label: '收入KPI' },
               { key: 'kpi_pharmacy', label: '药品使用KPI' },
-              { key: 'kpi_inpatient', label: '住院KPI' },
             ]
           },
           {
@@ -169,45 +168,45 @@ const router = createRouter({
         ],
       },
     },
-    {
-      path: '/inpatient',
-      name: 'inpatient',
-      component: InpatientManagement,
-      meta: {
-        requiresAuth: true,
-        title: '住院管理',
-        sidebar: [
-          {
-            key: 'sub_wards',
-            label: '病房',
-            children: [
-              { key: 'wards_list', label: '病房列表' },
-              { key: 'wards_beds', label: '床位管理' },
-              { key: 'wards_areas', label: '病区设置' },
-            ]
-          },
-          {
-            key: 'sub_admissions',
-            label: '入院记录',
-            children: [
-              { key: 'admissions_register', label: '住院登记' },
-              { key: 'admissions_care', label: '护理记录' },
-              { key: 'admissions_orders', label: '医嘱执行' },
-              { key: 'admissions_transfer', label: '转科/转床' },
-            ]
-          },
-          {
-            key: 'sub_discharges',
-            label: '出院办理',
-            children: [
-              { key: 'discharges_process', label: '出院办理' },
-              { key: 'discharges_settlement', label: '费用结算' },
-              { key: 'discharges_summary', label: '出院小结' },
-            ]
-          },
-        ],
-      },
-    },
+    //{
+    //  path: '/inpatient',
+    //  name: 'inpatient',
+    //  component: InpatientManagement,
+    //  meta: {
+    //    requiresAuth: true,
+    //    title: '住院管理',
+    //    sidebar: [
+    //      {
+    //        key: 'sub_wards',
+    //        label: '病房',
+    //        children: [
+    //          { key: 'wards_list', label: '病房列表' },
+    //          { key: 'wards_beds', label: '床位管理' },
+    //          { key: 'wards_areas', label: '病区设置' },
+    //        ]
+    //      },
+    //      {
+    //        key: 'sub_admissions',
+    //        label: '入院记录',
+    //        children: [
+    //          { key: 'admissions_register', label: '住院登记' },
+    //          { key: 'admissions_care', label: '护理记录' },
+    //          { key: 'admissions_orders', label: '医嘱执行' },
+    //          { key: 'admissions_transfer', label: '转科/转床' },
+    //        ]
+    //      },
+    //      {
+    //        key: 'sub_discharges',
+    //        label: '出院办理',
+    //        children: [
+    //          { key: 'discharges_process', label: '出院办理' },
+    //          { key: 'discharges_settlement', label: '费用结算' },
+    //          { key: 'discharges_summary', label: '出院小结' },
+    //        ]
+    //      },
+    //    ],
+    //  },
+    //},
     //{
     //  path: '/payments',
     //  name: 'payments',
@@ -261,7 +260,6 @@ const router = createRouter({
             label: '日报',
             children: [
               { key: 'daily_visits', label: '就诊日报' },
-              { key: 'daily_revenue', label: '收入日报' },
               { key: 'daily_drugs', label: '药品使用日报' },
               { key: 'daily_export', label: '导出CSV' },
             ]
@@ -271,7 +269,6 @@ const router = createRouter({
             label: '月报',
             children: [
               { key: 'monthly_visits', label: '就诊月报' },
-              { key: 'monthly_revenue', label: '收入月报' },
               { key: 'monthly_drugs', label: '药品使用月报' },
               { key: 'monthly_compare', label: '趋势对比' },
             ]

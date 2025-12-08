@@ -17,7 +17,7 @@
       <a-menu-item key="appointments">预约管理</a-menu-item>
       <a-menu-item key="records">病历管理</a-menu-item>
       <a-menu-item key="pharmacy">药品与库存</a-menu-item>
-      <a-menu-item key="inpatient">住院管理</a-menu-item>
+      <!--<a-menu-item key="inpatient">住院管理</a-menu-item>-->
       <!--<a-menu-item key="payments">在线支付</a-menu-item>-->
       <a-menu-item key="reports">报表统计</a-menu-item>
     </a-menu>
@@ -71,7 +71,7 @@
       <a-menu-item key="appointments">预约管理</a-menu-item>
       <a-menu-item key="records">病历管理</a-menu-item>
       <a-menu-item key="pharmacy">药品与库存</a-menu-item>
-      <a-menu-item key="inpatient">住院管理</a-menu-item>
+      <!--<a-menu-item key="inpatient">住院管理</a-menu-item>-->
       <!--<a-menu-item key="payments">在线支付</a-menu-item>-->
       <a-menu-item key="reports">报表统计</a-menu-item>
     </a-menu>
@@ -122,7 +122,7 @@ const keyToPath = {
   appointments: '/appointments',
   records: '/records',
   pharmacy: '/pharmacy',
-  inpatient: '/inpatient',
+  //inpatient: '/inpatient',
   //payments: '/payments',
   reports: '/reports',
 }
@@ -134,7 +134,7 @@ function onMenuSelect({ key }) {
     appointments: 'list_all',
     records: 'list_all',
     pharmacy: 'inventory_drugs',
-    inpatient: 'wards_list',
+    //inpatient: 'wards_list',
     //payments: 'transactions_list',
     reports: 'daily_visits',
   }
