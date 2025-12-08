@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.response import err, ok
 from app.db.session import get_session
 from app.models.record import MedicalRecord, RecordTemplate
-from app.models.basic import Department, Doctor
+from app.models.appointment import Department, Doctor
 from app.models.patient import Patient
 from app.schemas.record import (
     RecordCreate,
@@ -474,7 +474,7 @@ async def check_doctor_dept(session: AsyncSession, dept_id: int, doctor_id: int)
     doc = await session.get(Doctor, doctor_id)
     if not doc:
         return False, "医生不存在"
-    if (doc.department or "").strip() != (dept.dept_name or "").strip():
+    if doc.dept_id != dept.dept_id:
         return False, "医生不属于该科室"
     return True, ""
 
