@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date, time
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
@@ -43,7 +43,11 @@ async def list_schedules(
     if doctorId:
         stmt = stmt.where(Schedule.doctor_id == doctorId)
     if workDate:
-        stmt = stmt.where(Schedule.work_date == workDate)
+        try:
+            work_date_obj = datetime.strptime(workDate, "%Y-%m-%d").date()
+            stmt = stmt.where(Schedule.work_date == work_date_obj)
+        except ValueError:
+            return err(400, "workDate 格式错误，应为 YYYY-MM-DD")
     
     # 查询总数
     total_stmt = select(func.count()).select_from(stmt.subquery())
@@ -64,8 +68,24 @@ async def list_schedules(
         booked_res = await session.execute(booked_stmt)
         booked_count = int(booked_res.scalar_one())
         
+        # 将日期与时间格式化为字符串
+        work_date_str = (
+            schedule.work_date.strftime("%Y-%m-%d")
+            if hasattr(schedule.work_date, "strftime")
+            else str(schedule.work_date)
+        )
+        start_time_str = (
+            schedule.start_time.strftime("%H:%M")
+            if hasattr(schedule.start_time, "strftime")
+            else str(schedule.start_time)
+        )
+        end_time_str = (
+            schedule.end_time.strftime("%H:%M")
+            if hasattr(schedule.end_time, "strftime")
+            else str(schedule.end_time)
+        )
         # 根据start_time和end_time生成workPeriod
-        work_period = f"{schedule.start_time} - {schedule.end_time}"
+        work_period = f"{start_time_str} - {end_time_str}"
         
         # 获取医生信息以获取dept_id
         doctor_stmt = select(Doctor.dept_id).where(Doctor.doctor_id == schedule.doctor_id)
@@ -79,10 +99,10 @@ async def list_schedules(
                 doctorName=doctor_name,
                 deptId=dept_id,
                 deptName=dept_name,
-                workDate=schedule.work_date,
+                workDate=work_date_str,
                 workPeriod=work_period,
-                startTime=schedule.start_time,
-                endTime=schedule.end_time,
+                startTime=start_time_str,
+                endTime=end_time_str,
                 totalQuota=schedule.max_appointments,
                 bookedCount=booked_count,
                 availableQuota=schedule.max_appointments - booked_count,

@@ -99,7 +99,7 @@ async def create_doctor(
         return err(400, "用户不存在")
     
     # 创建医生
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now()
     doctor = Doctor(
         doctor_name=payload.doctorName,
         dept_id=payload.deptId,

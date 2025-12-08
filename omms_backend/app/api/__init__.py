@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 
 from app.api.records import router as records_router
 from app.api.auth import router as auth_router
-from app.api.appointments.__init__ import router as appointment_router
+from app.api.appointments import router as appointment_router
 from app.core.auth import require_auth
 
 

@@ -178,13 +178,13 @@ class DepartmentListData(BaseModel):
 class DepartmentListResponse(BaseModel):
     code: int
     message: str
-    data: DepartmentListData
+    data: Optional[DepartmentListData]
 
 
 class DepartmentResponse(BaseModel):
     code: int
     message: str
-    data: DepartmentOut
+    data: Optional[DepartmentOut]
 
 
 class DoctorListData(BaseModel):
@@ -197,13 +197,13 @@ class DoctorListData(BaseModel):
 class DoctorListResponse(BaseModel):
     code: int
     message: str
-    data: DoctorListData
+    data: Optional[DoctorListData]
 
 
 class DoctorResponse(BaseModel):
     code: int
     message: str
-    data: DoctorOut
+    data: Optional[DoctorOut]
 
 
 class ScheduleListData(BaseModel):
@@ -216,7 +216,7 @@ class ScheduleListData(BaseModel):
 class ScheduleListResponse(BaseModel):
     code: int
     message: str
-    data: ScheduleListData
+    data: Optional[ScheduleListData]
 
 
 class AppointmentListData(BaseModel):
@@ -229,16 +229,16 @@ class AppointmentListData(BaseModel):
 class AppointmentListResponse(BaseModel):
     code: int
     message: str
-    data: AppointmentListData
+    data: Optional[AppointmentListData]
 
 
 class AppointmentResponse(BaseModel):
     code: int
     message: str
-    data: AppointmentOut
+    data: Optional[AppointmentOut]
 
 
 class DeleteResponse(BaseModel):
     code: int
     message: str
-    data: dict
+    data: Optional[dict]

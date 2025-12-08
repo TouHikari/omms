@@ -4,7 +4,7 @@ from app.api.appointments.doctors import router as doctors_router
 from app.api.appointments.schedules import router as schedules_router
 from app.api.appointments.appointments import router as appointments_router
 
-router = APIRouter(tags=["appointment"])
+router = APIRouter(tags=["appointments"])
 
 # 注册所有路由
 router.include_router(departments_router, prefix="", tags=["departments"])

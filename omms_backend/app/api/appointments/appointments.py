@@ -8,6 +8,8 @@ from app.core.response import err, ok
 from app.db.session import get_session
 from app.models.appointment import Appointment, Doctor, Department
 from app.models.patient import Patient
+from app.core.auth import get_current_user
+from app.models.user import User
 from app.schemas.appointment import (
     AppointmentCreate,
     AppointmentUpdate,
@@ -40,10 +42,11 @@ async def list_appointments(
     
     # 构建查询语句
     stmt = select(
-        Appointment, 
-        Patient.name.label('patient_name'), 
-        Doctor.doctor_name, 
-        Department.dept_name
+        Appointment,
+        Patient.name.label('patient_name'),
+        Doctor.doctor_name,
+        Department.dept_name,
+        Doctor.dept_id.label('dept_id'),
     ).join(Patient, Appointment.patient_id == Patient.patient_id).join(
         Doctor, Appointment.doctor_id == Doctor.doctor_id
     ).join(Department, Doctor.dept_id == Department.dept_id)
@@ -66,7 +69,7 @@ async def list_appointments(
     
     # 构建响应数据
     appointment_list = []
-    for appointment, patient_name, doctor_name, dept_name in res:
+    for appointment, patient_name, doctor_name, dept_name, dept_id in res:
         appointment_list.append(
             AppointmentOut(
                 apptId=appointment.appt_id,
@@ -74,10 +77,10 @@ async def list_appointments(
                 patientName=patient_name,
                 doctorId=appointment.doctor_id,
                 doctorName=doctor_name,
-                deptId=appointment.doctor.dept_id,
+                deptId=dept_id,
                 deptName=dept_name,
                 scheduleId=appointment.schedule_id,
-                apptTime=appointment.appt_time,
+                apptTime=appointment.appt_time.strftime("%Y-%m-%d %H:%M:%S") if appointment.appt_time else None,
                 status=appointment.status,
                 symptomDesc=appointment.symptom_desc,
                 createdAt=appointment.created_at,
@@ -102,10 +105,16 @@ async def list_appointments(
 async def create_appointment(
     payload: AppointmentCreate,
     session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
     """创建预约"""
-    # 检查患者是否存在
     patient = await session.get(Patient, payload.patientId)
+    if not patient:
+        res = await session.execute(select(Patient).where(Patient.user_id == payload.patientId))
+        patient = res.scalars().first()
+    if not patient:
+        res = await session.execute(select(Patient).where(Patient.user_id == current_user.user_id))
+        patient = res.scalars().first()
     if not patient:
         return err(400, "患者不存在")
     
@@ -126,8 +135,23 @@ async def create_appointment(
     
     # 检查预约时间是否在排班时间内
     appt_time = datetime.strptime(payload.apptTime, "%Y-%m-%d %H:%M:%S")
-    schedule_start = datetime.strptime(f"{schedule.work_date} {schedule.start_time}", "%Y-%m-%d %H:%M")
-    schedule_end = datetime.strptime(f"{schedule.work_date} {schedule.end_time}", "%Y-%m-%d %H:%M")
+    work_date_str = (
+        schedule.work_date.strftime("%Y-%m-%d")
+        if hasattr(schedule.work_date, "strftime")
+        else str(schedule.work_date)
+    )
+    start_time_str = (
+        schedule.start_time.strftime("%H:%M")
+        if hasattr(schedule.start_time, "strftime")
+        else str(schedule.start_time)
+    )
+    end_time_str = (
+        schedule.end_time.strftime("%H:%M")
+        if hasattr(schedule.end_time, "strftime")
+        else str(schedule.end_time)
+    )
+    schedule_start = datetime.strptime(f"{work_date_str} {start_time_str}", "%Y-%m-%d %H:%M")
+    schedule_end = datetime.strptime(f"{work_date_str} {end_time_str}", "%Y-%m-%d %H:%M")
     
     if not (schedule_start <= appt_time <= schedule_end):
         return err(400, "预约时间不在排班时间内")
@@ -139,13 +163,14 @@ async def create_appointment(
     booked_res = await session.execute(booked_stmt)
     booked_count = int(booked_res.scalar_one())
     
-    if booked_count >= schedule.total_quota:
+    if booked_count >= schedule.max_appointments:
         return err(400, "该时段预约已满")
     
     # 检查患者是否在同一时间段已有预约
+    actual_patient_id = patient.patient_id
     existing_stmt = select(Appointment).where(
-        (Appointment.patient_id == payload.patientId) & 
-        (Appointment.appt_time == payload.apptTime) & 
+        (Appointment.patient_id == actual_patient_id) & 
+        (Appointment.appt_time == appt_time) & 
         (Appointment.status != 2)  # 排除已取消的预约
     )
     existing_res = await session.execute(existing_stmt)
@@ -157,7 +182,7 @@ async def create_appointment(
     # 将字符串格式的appt_time转换为datetime对象
     appt_time = datetime.strptime(payload.apptTime, "%Y-%m-%d %H:%M:%S")
     appointment = Appointment(
-        patient_id=payload.patientId,
+        patient_id=actual_patient_id,
         doctor_id=payload.doctorId,
         schedule_id=payload.scheduleId,
         appt_time=appt_time,
@@ -174,7 +199,8 @@ async def create_appointment(
     # 获取患者姓名、医生姓名和科室名称
     patient_name = patient.name
     doctor_name = doctor.doctor_name
-    dept_name = doctor.department.dept_name if hasattr(doctor, 'department') else ''
+    dept_res = await session.execute(select(Department.dept_name).where(Department.dept_id == doctor.dept_id))
+    dept_name = dept_res.scalar_one_or_none() or ''
     
     return ok(
         AppointmentOut(
@@ -189,8 +215,8 @@ async def create_appointment(
             apptTime=appointment.appt_time.strftime("%Y-%m-%d %H:%M:%S"),
             status=appointment.status,
             symptomDesc=appointment.symptom_desc,
-            createdAt=appointment.created_at.strftime("%Y-%m-%d %H:%M:%S") if appointment.created_at else None,
-            updatedAt=appointment.updated_at.strftime("%Y-%m-%d %H:%M:%S") if appointment.updated_at else None,
+            createdAt=appointment.created_at,
+            updatedAt=appointment.updated_at,
         ),
         "预约创建成功"
     )
@@ -208,10 +234,11 @@ async def get_appointment(
 ):
     """获取预约详情"""
     stmt = select(
-        Appointment, 
-        Patient.name.label('patient_name'), 
-        Doctor.doctor_name, 
-        Department.dept_name
+        Appointment,
+        Patient.name.label('patient_name'),
+        Doctor.doctor_name,
+        Department.dept_name,
+        Doctor.dept_id.label('dept_id'),
     ).join(Patient, Appointment.patient_id == Patient.patient_id).join(
         Doctor, Appointment.doctor_id == Doctor.doctor_id
     ).join(Department, Doctor.dept_id == Department.dept_id).where(Appointment.appt_id == appt_id)
@@ -222,7 +249,7 @@ async def get_appointment(
     if not result:
         return err(404, "预约不存在")
     
-    appointment, patient_name, doctor_name, dept_name = result
+    appointment, patient_name, doctor_name, dept_name, dept_id = result
     
     return ok(
         AppointmentOut(
@@ -231,14 +258,14 @@ async def get_appointment(
             patientName=patient_name,
             doctorId=appointment.doctor_id,
             doctorName=doctor_name,
-            deptId=appointment.doctor.dept_id,
+            deptId=dept_id,
             deptName=dept_name,
             scheduleId=appointment.schedule_id,
             apptTime=appointment.appt_time.strftime("%Y-%m-%d %H:%M:%S"),
             status=appointment.status,
             symptomDesc=appointment.symptom_desc,
-            createdAt=appointment.created_at.strftime("%Y-%m-%d %H:%M:%S") if appointment.created_at else None,
-            updatedAt=appointment.updated_at.strftime("%Y-%m-%d %H:%M:%S") if appointment.updated_at else None,
+            createdAt=appointment.created_at,
+            updatedAt=appointment.updated_at,
         )
     )
 
@@ -270,12 +297,13 @@ async def update_appointment(
     
     # 获取患者姓名、医生姓名和科室名称
     stmt = select(
-        Patient.name.label('patient_name'), 
-        Doctor.doctor_name, 
-        Department.dept_name
-    ).join(Doctor, Appointment.doctor_id == Doctor.doctor_id).join(
-        Department, Doctor.dept_id == Department.dept_id
-    ).where(Appointment.appt_id == appt_id)
+        Patient.name.label('patient_name'),
+        Doctor.doctor_name,
+        Department.dept_name,
+        Doctor.dept_id.label('dept_id'),
+    ).select_from(Appointment).join(Patient, Appointment.patient_id == Patient.patient_id).join(
+        Doctor, Appointment.doctor_id == Doctor.doctor_id
+    ).join(Department, Doctor.dept_id == Department.dept_id).where(Appointment.appt_id == appt_id)
     
     res = await session.execute(stmt)
     result = res.first()
@@ -283,7 +311,7 @@ async def update_appointment(
     if not result:
         return err(404, "预约详情获取失败")
     
-    patient_name, doctor_name, dept_name = result
+    patient_name, doctor_name, dept_name, dept_id = result
     
     return ok(
         AppointmentOut(
@@ -292,10 +320,10 @@ async def update_appointment(
             patientName=patient_name,
             doctorId=appointment.doctor_id,
             doctorName=doctor_name,
-            deptId=appointment.doctor.dept_id,
+            deptId=dept_id,
             deptName=dept_name,
             scheduleId=appointment.schedule_id,
-            apptTime=appointment.appt_time,
+            apptTime=appointment.appt_time.strftime("%Y-%m-%d %H:%M:%S") if appointment.appt_time else None,
             status=appointment.status,
             symptomDesc=appointment.symptom_desc,
             createdAt=appointment.created_at,
@@ -332,10 +360,11 @@ async def update_appointment_status(
     
     # 获取患者姓名、医生姓名和科室名称
     stmt = select(
-        Patient.name.label('patient_name'), 
-        Doctor.doctor_name, 
-        Department.dept_name
-    ).join(Patient, Appointment.patient_id == Patient.patient_id).join(
+        Patient.name.label('patient_name'),
+        Doctor.doctor_name,
+        Department.dept_name,
+        Doctor.dept_id.label('dept_id'),
+    ).select_from(Appointment).join(Patient, Appointment.patient_id == Patient.patient_id).join(
         Doctor, Appointment.doctor_id == Doctor.doctor_id
     ).join(Department, Doctor.dept_id == Department.dept_id).where(Appointment.appt_id == appt_id)
     
@@ -345,7 +374,7 @@ async def update_appointment_status(
     if not result:
         return err(404, "预约详情获取失败")
     
-    patient_name, doctor_name, dept_name = result
+    patient_name, doctor_name, dept_name, dept_id = result
     
     return ok(
         AppointmentOut(
@@ -354,14 +383,14 @@ async def update_appointment_status(
             patientName=patient_name,
             doctorId=appointment.doctor_id,
             doctorName=doctor_name,
-            deptId=appointment.doctor.dept_id,
+            deptId=dept_id,
             deptName=dept_name,
             scheduleId=appointment.schedule_id,
             apptTime=appointment.appt_time.strftime("%Y-%m-%d %H:%M:%S") if appointment.appt_time else None,
             status=appointment.status,
             symptomDesc=appointment.symptom_desc,
-            createdAt=appointment.created_at.strftime("%Y-%m-%d %H:%M:%S") if appointment.created_at else None,
-            updatedAt=appointment.updated_at.strftime("%Y-%m-%d %H:%M:%S") if appointment.updated_at else None,
+            createdAt=appointment.created_at,
+            updatedAt=appointment.updated_at,
         ),
         "预约状态更新成功"
     )

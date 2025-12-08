@@ -16,8 +16,8 @@ class User(Base):
     phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, unique=True)
     real_name: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     status: Mapped[int] = mapped_column(Integer, default=1, index=True)
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=datetime.now())
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, onupdate=datetime.now())
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=datetime.now)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, onupdate=datetime.now)
     last_login_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     role_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
     

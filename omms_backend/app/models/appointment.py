@@ -16,8 +16,8 @@ class Department(Base):
     description: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     parent_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=datetime.now())
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, onupdate=datetime.now())
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=datetime.now)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, onupdate=datetime.now)
     
     # 关系定义
     doctors: Mapped[list["Doctor"]] = relationship("Doctor", back_populates="department")
@@ -35,8 +35,8 @@ class Doctor(Base):
     specialty: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     introduction: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     available_status: Mapped[int] = mapped_column(Integer, default=1, index=True)
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=datetime.now())
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, onupdate=datetime.now())
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=datetime.now)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, onupdate=datetime.now)
     
     # 关系定义
     department: Mapped["Department"] = relationship("Department", back_populates="doctors")
@@ -56,8 +56,8 @@ class Schedule(Base):
     max_appointments: Mapped[int] = mapped_column(Integer, default=20)
     booked: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[int] = mapped_column(Integer, default=1, index=True)
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=datetime.now())
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, onupdate=datetime.now())
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=datetime.now)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, onupdate=datetime.now)
     
     # 关系定义
     doctor: Mapped["Doctor"] = relationship("Doctor", back_populates="schedules")
@@ -75,14 +75,11 @@ class Appointment(Base):
     appt_time: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
     status: Mapped[int] = mapped_column(Integer, default=0, index=True)
     symptom_desc: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=datetime.now())
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, onupdate=datetime.now())
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=datetime.now)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, onupdate=datetime.now)
     
     # 关系定义
     patient: Mapped["Patient"] = relationship("Patient", back_populates="appointments")
     doctor: Mapped["Doctor"] = relationship("Doctor", back_populates="appointments")
     schedule: Mapped["Schedule"] = relationship("Schedule", back_populates="appointments")
 
-
-# 添加反向关系
-Department.doctors = relationship("Doctor", back_populates="department")

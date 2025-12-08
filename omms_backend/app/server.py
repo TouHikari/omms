@@ -3,6 +3,7 @@ import json
 from typing import Any
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,7 +14,7 @@ from app.db.session import init_db
 class UTF8JSONResponse(JSONResponse):
     def render(self, content: Any) -> bytes:
         return json.dumps(
-            content,
+            jsonable_encoder(content),
             ensure_ascii=False,
             allow_nan=False,
             indent=None,
@@ -88,5 +89,8 @@ app.openapi_tags = [
     {"name": "auth", "description": "认证与授权接口"},
     {"name": "records", "description": "病历与病历模板管理接口"},
     {"name": "appointments", "description": "预约管理接口"},
+    {"name": "departments", "description": "科室管理接口"},
+    {"name": "doctors", "description": "医生管理接口"},
+    {"name": "schedules", "description": "排班查询接口"},
 ]
 app.include_router(get_api_router(), prefix="/api")

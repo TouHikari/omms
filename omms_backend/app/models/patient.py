@@ -20,8 +20,8 @@ class Patient(Base):
     address: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     emergency_contact: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     emergency_phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=True, default=datetime.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=True, onupdate=datetime.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=True, default=datetime.now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=True, onupdate=datetime.now)
     
     # 关系定义
     appointments: Mapped[list["Appointment"]] = relationship("Appointment", back_populates="patient")
