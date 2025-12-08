@@ -76,7 +76,7 @@ const expiringList = computed(() => {
       </a-radio-group>
     </a-space>
 
-    <a-table v-if="mode === 'drugs'" :columns="drugColumns" :data-source="medicines" rowKey="id">
+    <a-table v-if="mode === 'drugs'" :columns="drugColumns" :data-source="medicines" :scroll="{ x: 860 }" size="small" rowKey="id">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'price'">
           ￥{{ Number(record.price).toFixed(2) }} / {{ record.unit }}
@@ -89,7 +89,7 @@ const expiringList = computed(() => {
       </template>
     </a-table>
 
-    <a-table v-else-if="mode === 'batches'" :columns="batchColumns" :data-source="batches" rowKey="id">
+    <a-table v-else-if="mode === 'batches'" :columns="batchColumns" :data-source="batches" :scroll="{ x: 860 }" size="small" rowKey="id">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'expiryDate'">
           <a-tag :color="new Date(record.expiryDate) < new Date() ? 'default' : 'blue'">{{ record.expiryDate }}</a-tag>
@@ -97,7 +97,7 @@ const expiringList = computed(() => {
       </template>
     </a-table>
 
-    <a-table v-else-if="mode === 'low_stock'" :columns="drugColumns" :data-source="lowStockList" rowKey="id">
+    <a-table v-else-if="mode === 'low_stock'" :columns="drugColumns" :data-source="lowStockList" :scroll="{ x: 860 }" size="small" rowKey="id">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'price'">
           ￥{{ Number(record.price).toFixed(2) }} / {{ record.unit }}
@@ -108,7 +108,7 @@ const expiringList = computed(() => {
       </template>
     </a-table>
 
-    <a-table v-else-if="mode === 'expiry'" :columns="batchColumns" :data-source="expiringList" rowKey="id">
+    <a-table v-else-if="mode === 'expiry'" :columns="batchColumns" :data-source="expiringList" :scroll="{ x: 860 }" size="small" rowKey="id">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'expiryDate'">
           <a-tag color="orange">{{ record.expiryDate }}</a-tag>
@@ -116,7 +116,7 @@ const expiringList = computed(() => {
       </template>
     </a-table>
 
-    <a-table v-else-if="mode === 'inout'" :columns="logColumns" :data-source="logs" rowKey="id">
+    <a-table v-else-if="mode === 'inout'" :columns="logColumns" :data-source="logs" :scroll="{ x: 860 }" size="small" rowKey="id">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'type'">
           <a-tag :color="record.type === 'in' ? 'green' : 'blue'">{{ record.type === 'in' ? '入库' : '出库' }}</a-tag>
