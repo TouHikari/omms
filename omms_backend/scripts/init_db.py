@@ -56,12 +56,19 @@ async def seed_app_tables(
 ) -> None:
     from sqlalchemy import delete, text
     from app.models.record import MedicalRecord, RecordTemplate
+    from app.models.appointment import Department, Doctor, Schedule, Appointment
+    from app.models.patient import Patient
     from app.core.security import get_password_hash
 
     await init_db_func()
     async with session_factory() as session:
         await session.execute(delete(MedicalRecord))
         await session.execute(delete(RecordTemplate))
+        await session.execute(delete(Appointment))
+        await session.execute(delete(Schedule))
+        await session.execute(delete(Doctor))
+        await session.execute(delete(Department))
+        await session.execute(delete(Patient))
         tpl1 = RecordTemplate(
             name="内科常用模板",
             scope="内科",
@@ -108,6 +115,44 @@ async def seed_app_tables(
         )
         session.add_all([tpl1, tpl2])
         await session.commit()
+        
+        # Seed departments
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        await session.execute(text("DELETE FROM departments"))
+        await session.execute(
+            text(
+                """
+                INSERT INTO departments (dept_id, dept_name, description, sort_order, created_at, updated_at)
+                VALUES (:id, :name, :desc, :sort, :created, :updated)
+                """
+            ),
+            {
+                "id": 1,
+                "name": "内科",
+                "desc": "内科科室",
+                "sort": 1,
+                "created": now,
+                "updated": now,
+            },
+        )
+        await session.execute(
+            text(
+                """
+                INSERT INTO departments (dept_id, dept_name, description, sort_order, created_at, updated_at)
+                VALUES (:id, :name, :desc, :sort, :created, :updated)
+                """
+            ),
+            {
+                "id": 2,
+                "name": "外科",
+                "desc": "外科科室",
+                "sort": 2,
+                "created": now,
+                "updated": now,
+            },
+        )
+        await session.commit()
+        
         now = datetime.now()
         for i in range(seed_count):
             rid = f"MR-{now.strftime('%Y%m%d')}-{random.randint(1000, 9999)}"
@@ -116,9 +161,9 @@ async def seed_app_tables(
             )
             record = MedicalRecord(
                 id=rid,
-                dept_id=random.choice([1, 2, 3]),
-                doctor_id=random.choice([1, 2, 3]),
-                patient_id=random.choice([10001, 10002, 10003]),
+                dept_id=random.choice([1, 2]),
+                doctor_id=1,
+                patient_id=1,
                 patient_name=random.choice(["张三", "李四", "王五"]),
                 created_at=created_at,
                 status=random.choice(["draft", "finalized", "cancelled"]),
@@ -179,17 +224,16 @@ async def seed_app_tables(
                 await session.execute(
                     text(
                         """
-                        INSERT INTO doctors (user_id,name,department,title,specialty,intro,available_status,created_at,updated_at)
-                        VALUES (:uid,:name,:dept,:title,:spec,:intro,1,:created,:updated)
+                        INSERT INTO doctors (user_id,doctor_name,dept_id,title,specialty,available_status,created_at,updated_at)
+                        VALUES (:uid,:name,:dept_id,:title,:spec,1,:created,:updated)
                         """
                     ),
                     {
                         "uid": doc_uid,
                         "name": "李医生",
-                        "dept": "内科",
+                        "dept_id": 1,
                         "title": "主治医师",
                         "spec": "呼吸内科",
-                        "intro": "",
                         "created": now,
                         "updated": now,
                     },
@@ -223,8 +267,8 @@ async def seed_app_tables(
                 await session.execute(
                     text(
                         """
-                        INSERT INTO patients (user_id,name,gender,birthday,id_card,address,emergency_contact,emergency_phone,created_at,updated_at)
-                        VALUES (:uid,:name,:gender,:birthday,:id_card,:address,:ec,:ep,:created,:updated)
+                        INSERT INTO patients (user_id,name,gender,birthday,id_card,created_at,updated_at)
+                        VALUES (:uid,:name,:gender,:birthday,:id_card,:created,:updated)
                         """
                     ),
                     {
@@ -233,13 +277,52 @@ async def seed_app_tables(
                         "gender": 1,
                         "birthday": "1990-01-01",
                         "id_card": "110101199001010000",
-                        "address": "北京市东城区XX路XX号",
-                        "ec": "李四",
-                        "ep": "13800000002",
                         "created": now,
                         "updated": now,
                     },
                 )
+            
+            # Seed schedules
+            work_date = now.split()[0]
+            await session.execute(text("DELETE FROM doctor_schedules"))
+            await session.execute(
+                text(
+                    """
+                    INSERT INTO doctor_schedules (doctor_id, work_date, start_time, end_time, max_appointments, booked, status, created_at, updated_at)
+                    VALUES (:doctor_id, :work_date, :start_time, :end_time, :max_appointments, 0, 1, :created, :updated)
+                    """
+                ),
+                {
+                    "doctor_id": 1,
+                    "work_date": work_date,
+                    "start_time": "08:00:00",
+                    "end_time": "12:00:00",
+                    "max_appointments": 10,
+                    "created": now,
+                    "updated": now,
+                },
+            )
+            
+            # Seed appointments
+            await session.execute(text("DELETE FROM appointments"))
+            await session.execute(
+                text(
+                    """
+                    INSERT INTO appointments (patient_id, doctor_id, schedule_id, appt_time, status, symptom_desc, created_at, updated_at)
+                    VALUES (:patient_id, :doctor_id, :schedule_id, :appt_time, :status, :symptom_desc, :created, :updated)
+                    """
+                ),
+                {
+                    "patient_id": 1,
+                    "doctor_id": 1,
+                    "schedule_id": 1,
+                    "appt_time": f"{work_date} 09:00:00",
+                    "status": 0,
+                    "symptom_desc": "发热咳嗽",
+                    "created": now,
+                    "updated": now,
+                },
+            )
 
             await session.commit()
         except Exception:
@@ -266,10 +349,10 @@ def main() -> None:
         os.environ["DATABASE_URL"] = args.dsn
     elif args.sqlite:
         os.environ["DATABASE_URL"] = (
-            f"sqlite+aiosqlite:///{(ROOT / 'omms_dev.db').resolve().as_posix()}"
+            f"sqlite+aiosqlite:///{(ROOT / 'test.db').resolve().as_posix()}"
         )
 
-    from app.settings import settings as settings_obj
+    from app.core.settings import settings as settings_obj
     from app.db.session import (
         init_db as init_db_func,
         AsyncSessionLocal as session_factory,

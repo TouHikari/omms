@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from app.db.session import get_session
 from app.models.user import User
-from app.settings import settings
+from app.core.settings import settings
 
 
 async def get_current_user(authorization: Optional[str] = Header(None), session: AsyncSession = Depends(get_session)) -> User:
