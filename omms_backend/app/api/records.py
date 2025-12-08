@@ -39,7 +39,7 @@ def now_date_str() -> str:
 
 
 def compose_time(date_str: str, hhmm: Optional[str]) -> str:
-    return f"{date_str} {hhmm or '10:00'}"
+    return f"{date_str} {hhmm or datetime.now().strftime('%H:%M')}"
 
 
 def to_list(text_val: Optional[str]) -> List[str]:

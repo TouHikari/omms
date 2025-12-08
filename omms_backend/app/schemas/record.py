@@ -107,13 +107,13 @@ class RecordsListData(BaseModel):
 class RecordsListResponse(BaseModel):
     code: int
     message: str
-    data: RecordsListData
+    data: Optional[RecordsListData]
 
 
 class RecordResponse(BaseModel):
     code: int
     message: str
-    data: MedicalRecordOut
+    data: Optional[MedicalRecordOut]
 
 
 class RecordStatusData(BaseModel):
@@ -124,13 +124,13 @@ class RecordStatusData(BaseModel):
 class RecordStatusResponse(BaseModel):
     code: int
     message: str
-    data: RecordStatusData
+    data: Optional[RecordStatusData]
 
 
 class DeleteRecordResponse(BaseModel):
     code: int
     message: str
-    data: RecordStatusData
+    data: Optional[RecordStatusData]
 
 
 class RecordTemplateOut(BaseModel):
@@ -144,16 +144,16 @@ class RecordTemplateOut(BaseModel):
 class RecordTemplateListResponse(BaseModel):
     code: int
     message: str
-    data: List[RecordTemplateOut]
+    data: Optional[List[RecordTemplateOut]]
 
 
 class RecordTemplateResponse(BaseModel):
     code: int
     message: str
-    data: RecordTemplateOut
+    data: Optional[RecordTemplateOut]
 
 
 class TemplateDeleteResponse(BaseModel):
     code: int
     message: str
-    data: dict
+    data: Optional[dict]
