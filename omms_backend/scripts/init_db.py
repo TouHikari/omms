@@ -444,15 +444,22 @@ async def seed_app_tables(
         schedule_objs: list[Schedule] = []
         appt_objs: list[Appointment] = []
         for doc in doctor_objs:
-            days = [1, 3, 5, 7, 9, 11]
-            for d in days:
+            day_pool = list(range(1, 15))
+            k = random.randint(4, 8)
+            day_offsets = sorted(random.sample(day_pool, k=k))
+            for d in day_offsets:
                 work_date = (now_dt + timedelta(days=d)).date()
+                # 随机选择上午或下午时段
+                if random.random() < 0.5:
+                    st_str, et_str = "08:00:00", "12:00:00"
+                else:
+                    st_str, et_str = "13:30:00", "17:30:00"
                 s = Schedule(
                     doctor_id=doc.doctor_id,
                     work_date=work_date,
-                    start_time=datetime.strptime("08:00:00", "%H:%M:%S").time(),
-                    end_time=datetime.strptime("17:30:00", "%H:%M:%S").time(),
-                    max_appointments=16,
+                    start_time=datetime.strptime(st_str, "%H:%M:%S").time(),
+                    end_time=datetime.strptime(et_str, "%H:%M:%S").time(),
+                    max_appointments=random.randint(12, 20),
                     booked=0,
                     status=1,
                     created_at=now_dt,
@@ -463,12 +470,18 @@ async def seed_app_tables(
         await session.commit()
 
         for s in schedule_objs:
-            base_slots = 8
+            # 在该时段内随机生成预约时间，保证分布更自然
             start_dt = datetime.combine(s.work_date, s.start_time)
-            patients_pick = random.sample(patient_objs, k=min(base_slots, len(patient_objs)))
+            end_dt = datetime.combine(s.work_date, s.end_time)
+            duration_min = int((end_dt - start_dt).total_seconds() // 60)
+            step = 20
+            slots = [m for m in range(0, max(0, duration_min - step), step)]
+            count = random.randint(2, min(6, len(slots)))
+            pick_offsets = random.sample(slots, k=count)
+            patients_pick = random.sample(patient_objs, k=count)
             used_count = 0
-            for i, p in enumerate(patients_pick):
-                appt_time = start_dt + timedelta(minutes=20 * i)
+            for off, p in zip(pick_offsets, patients_pick):
+                appt_time = start_dt + timedelta(minutes=off)
                 status = random.choice([0, 1, 2])
                 symptom = random.choice(["发热咳嗽","腹痛","头痛","乏力","皮疹","牙痛","视物模糊","鼻塞流涕"]) 
                 ap = Appointment(

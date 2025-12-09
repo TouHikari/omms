@@ -136,3 +136,20 @@ export const getRecordDictionaryLabs = async () => {
   const list = json.data || []
   return { code: json.code, data: list, message: json.message }
 }
+
+export const getPatients = async (name = '', page = 1, pageSize = 20) => {
+  const qs = new URLSearchParams()
+  if (name) qs.set('name', name)
+  qs.set('page', String(page))
+  qs.set('pageSize', String(pageSize))
+  const res = await fetch(`${API_BASE_URL}/patients?${qs.toString()}`, { headers: { 'Content-Type': 'application/json', ...authHeaders() } })
+  const json = await res.json()
+  const data = json.data || { list: [], total: 0, page, pageSize }
+  return { code: json.code, data, message: json.message }
+}
+
+export const getPatientById = async (pid) => {
+  const res = await fetch(`${API_BASE_URL}/patients/${encodeURIComponent(pid)}`, { headers: { 'Content-Type': 'application/json', ...authHeaders() } })
+  const json = await res.json()
+  return json
+}

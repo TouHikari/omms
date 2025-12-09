@@ -4,7 +4,7 @@ import { message } from 'ant-design-vue'
 import { FileTextOutlined, SolutionOutlined, MedicineBoxOutlined, PictureOutlined, ExperimentOutlined, LeftOutlined } from '@ant-design/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getDepartments, getDoctorsByDept } from '@/api/appointment'
-import { createRecord, getRecordTemplateById, getRecordTemplates, getRecordDictionaries } from '@/api/record'
+import { createRecord, getRecordTemplateById, getRecordTemplates, getRecordDictionaries, getRecordDictionaryImaging, getRecordDictionaryLabs } from '@/api/record'
 
 const router = useRouter()
 const route = useRoute()
@@ -68,17 +68,22 @@ onMounted(async () => {
     if (res.code === 200) templatesList.value = res.data
     const dict = await getRecordDictionaries()
     if (dict.code === 200) {
-      const imgSet = new Set((dict.data.imaging || []).map(v => String(v)))
-      const labSet = new Set((dict.data.labs || []).map(v => String(v)))
-      (templatesList.value || []).forEach(t => {
-        ;(Array.isArray(t?.defaults?.imaging) ? t.defaults.imaging : []).forEach(v => imgSet.add(String(v)))
-        ;(Array.isArray(t?.defaults?.labs) ? t.defaults.labs : []).forEach(v => labSet.add(String(v)))
-      })
-      imagingOpts.value = Array.from(imgSet).map(v => ({ label: v, value: v }))
-      labOpts.value = Array.from(labSet).map(v => ({ label: v, value: v }))
+      const imgs = (dict.data.imaging || []).map(v => ({ label: String(v), value: String(v) }))
+      const labs = (dict.data.labs || []).map(v => ({ label: String(v), value: String(v) }))
+      imagingOpts.value = imgs
+      labOpts.value = labs
+    }
+    if (!imagingOpts.value.length) {
+      const r = await getRecordDictionaryImaging()
+      if (r.code === 200) imagingOpts.value = (r.data || []).map(v => ({ label: String(v), value: String(v) }))
+    }
+    if (!labOpts.value.length) {
+      const r = await getRecordDictionaryLabs()
+      if (r.code === 200) labOpts.value = (r.data || []).map(v => ({ label: String(v), value: String(v) }))
     }
   } catch {
-    message.error('加载模板列表失败')
+    imagingOpts.value = []
+    labOpts.value = []
   }
 })
 
@@ -91,12 +96,6 @@ async function applyTemplateFromRoute() {
       const d = res.data?.defaults || {}
       selectedTemplateId.value = Number(res.data.id)
       pendingTemplateDefaults.value = d
-      const imgSet = new Set(imagingOpts.value.map(i => i.value))
-      ;(Array.isArray(d.imaging) ? d.imaging : []).forEach(v => imgSet.add(v))
-      imagingOpts.value = Array.from(imgSet).map(v => ({ label: v, value: v }))
-      const labSet = new Set(labOpts.value.map(i => i.value))
-      ;(Array.isArray(d.labs) ? d.labs : []).forEach(v => labSet.add(v))
-      labOpts.value = Array.from(labSet).map(v => ({ label: v, value: v }))
       message.success(`已选择模板：${res.data.name}`)
     }
   } catch {
@@ -122,15 +121,6 @@ function onSelectTemplate(id) {
   selectedTemplateId.value = id
   const tpl = templatesList.value.find(t => t.id === id)
   pendingTemplateDefaults.value = tpl?.defaults || null
-  if (tpl?.defaults) {
-    const d = tpl.defaults
-    const imgSet = new Set(imagingOpts.value.map(i => i.value))
-    ;(Array.isArray(d.imaging) ? d.imaging : []).forEach(v => imgSet.add(v))
-    imagingOpts.value = Array.from(imgSet).map(v => ({ label: v, value: v }))
-    const labSet = new Set(labOpts.value.map(i => i.value))
-    ;(Array.isArray(d.labs) ? d.labs : []).forEach(v => labSet.add(v))
-    labOpts.value = Array.from(labSet).map(v => ({ label: v, value: v }))
-  }
   if (tpl) message.success(`已选择模板：${tpl.name}`)
 }
 

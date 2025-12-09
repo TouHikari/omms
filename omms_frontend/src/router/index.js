@@ -107,7 +107,7 @@ const router = createRouter({
               { key: 'list_by_patient', label: '按患者筛选' },
               { key: 'list_by_doctor', label: '按医生筛选' },
               { key: 'list_by_date', label: '按日期筛选' },
-              { key: 'list_lab_imaging', label: '按检验/检查结果筛选' },
+              { key: 'list_by_status', label: '按状态筛选' },
             ]
           },
           {

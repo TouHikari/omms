@@ -110,6 +110,10 @@ async def list_records(
         stmt = stmt.where(func.lower(func.replace(MedicalRecord.patient_name, " ", "")).like(f"%{kw}%"))
 
     res = await session.execute(stmt.order_by(MedicalRecord.created_at.desc()))
+    dept_rows = await session.execute(select(Department.dept_id, Department.dept_name))
+    dept_map = {row[0]: row[1] for row in dept_rows.all()}
+    doctor_rows = await session.execute(select(Doctor.doctor_id, Doctor.doctor_name))
+    doctor_map = {row[0]: row[1] for row in doctor_rows.all()}
     all_items = []
     for r in res.scalars().all():
         prescriptions = to_list(r.prescriptions_json)
@@ -118,8 +122,8 @@ async def list_records(
         item = {
             "id": r.id,
             "patient": r.patient_name or "",
-            "department": str(r.dept_id),
-            "doctor": str(r.doctor_id),
+            "department": dept_map.get(r.dept_id, str(r.dept_id)),
+            "doctor": doctor_map.get(r.doctor_id, str(r.doctor_id)),
             "createdAt": r.created_at,
             "status": r.status,
             "hasLab": len(labs) > 0,
@@ -154,12 +158,14 @@ async def get_record(id: str, session: AsyncSession = Depends(get_session)):
     prescriptions = to_list(r.prescriptions_json)
     labs = to_list(r.labs_json)
     imaging = to_list(r.imaging_json)
+    dept = await session.get(Department, r.dept_id)
+    doc = await session.get(Doctor, r.doctor_id)
     return ok(
         {
             "id": r.id,
             "patient": r.patient_name or "",
-            "department": str(r.dept_id),
-            "doctor": str(r.doctor_id),
+            "department": dept.dept_name if dept else str(r.dept_id),
+            "doctor": doc.doctor_name if doc else str(r.doctor_id),
             "createdAt": r.created_at,
             "status": r.status,
             "hasLab": len(labs) > 0,
@@ -214,12 +220,14 @@ async def create_record(payload: RecordCreate, session: AsyncSession = Depends(g
     await session.commit()
     labs = to_list(rec.labs_json)
     imaging = to_list(rec.imaging_json)
+    dept = await session.get(Department, rec.dept_id)
+    doc = await session.get(Doctor, rec.doctor_id)
     return ok(
         {
             "id": rec.id,
             "patient": rec.patient_name or "",
-            "department": str(rec.dept_id),
-            "doctor": str(rec.doctor_id),
+            "department": dept.dept_name if dept else str(rec.dept_id),
+            "doctor": doc.doctor_name if doc else str(rec.doctor_id),
             "createdAt": rec.created_at,
             "status": rec.status,
             "hasLab": len(labs) > 0,
@@ -519,7 +527,7 @@ async def records_stats(
 )
 async def records_dictionaries(session: AsyncSession = Depends(get_session)):
     res = await session.execute(select(MedicalRecord).where(or_(func.length(MedicalRecord.imaging_json) > 2, func.length(MedicalRecord.labs_json) > 2)))
-    imaging_set, labs_set = set(), set()
+    imaging_set, labs_set = set(BASE_IMAGING_DICT), set(BASE_LABS_DICT)
     for r in res.scalars().all():
         for v in to_list(r.imaging_json):
             if isinstance(v, str) and v.strip():
@@ -541,29 +549,6 @@ async def records_dictionaries(session: AsyncSession = Depends(get_session)):
                 labs_set.add(v.strip())
     return ok({"imaging": sorted(list(imaging_set)), "labs": sorted(list(labs_set))})
 
-@router.get(
-    "/records/dictionaries/imaging",
-    summary="影像词典",
-    description="返回影像项目词典",
-    response_model=DictionaryArrayResponse,
-)
-async def records_dictionaries_imaging(session: AsyncSession = Depends(get_session)):
-    res = await session.execute(select(MedicalRecord).where(func.length(MedicalRecord.imaging_json) > 2))
-    imaging_set = set()
-    for r in res.scalars().all():
-        for v in to_list(r.imaging_json):
-            if isinstance(v, str) and v.strip():
-                imaging_set.add(v.strip())
-    tpl_res = await session.execute(select(RecordTemplate))
-    for tpl in tpl_res.scalars().all():
-        try:
-            d = json.loads(tpl.defaults_json or "{}")
-        except Exception:
-            d = {}
-        for v in (d.get("imaging") or []):
-            if isinstance(v, str) and v.strip():
-                imaging_set.add(v.strip())
-    return ok(sorted(list(imaging_set)))
 
 @router.get(
     "/records/dictionaries/labs",
@@ -573,7 +558,7 @@ async def records_dictionaries_imaging(session: AsyncSession = Depends(get_sessi
 )
 async def records_dictionaries_labs(session: AsyncSession = Depends(get_session)):
     res = await session.execute(select(MedicalRecord).where(func.length(MedicalRecord.labs_json) > 2))
-    labs_set = set()
+    labs_set = set(BASE_LABS_DICT)
     for r in res.scalars().all():
         for v in to_list(r.labs_json):
             if isinstance(v, str) and v.strip():
@@ -588,6 +573,30 @@ async def records_dictionaries_labs(session: AsyncSession = Depends(get_session)
             if isinstance(v, str) and v.strip():
                 labs_set.add(v.strip())
     return ok(sorted(list(labs_set)))
+
+@router.get(
+    "/records/dictionaries/imaging",
+    summary="检查词典",
+    description="返回影像检查项目词典",
+    response_model=DictionaryArrayResponse,
+)
+async def records_dictionaries_imaging(session: AsyncSession = Depends(get_session)):
+    res = await session.execute(select(MedicalRecord).where(func.length(MedicalRecord.imaging_json) > 2))
+    imaging_set = set(BASE_IMAGING_DICT)
+    for r in res.scalars().all():
+        for v in to_list(r.imaging_json):
+            if isinstance(v, str) and v.strip():
+                imaging_set.add(v.strip())
+    tpl_res = await session.execute(select(RecordTemplate))
+    for tpl in tpl_res.scalars().all():
+        try:
+            d = json.loads(tpl.defaults_json or "{}")
+        except Exception:
+            d = {}
+        for v in (d.get("imaging") or []):
+            if isinstance(v, str) and v.strip():
+                imaging_set.add(v.strip())
+    return ok(sorted(list(imaging_set)))
 
 @router.get(
     "/patients",
@@ -682,6 +691,10 @@ async def list_records_extended(
         kw = "".join((patientKeyword or "").split()).lower()
         stmt = stmt.where(func.lower(func.replace(MedicalRecord.patient_name, " ", "")).like(f"%{kw}%"))
     res = await session.execute(stmt.order_by(MedicalRecord.created_at.desc()))
+    dept_rows = await session.execute(select(Department.dept_id, Department.dept_name))
+    dept_map = {row[0]: row[1] for row in dept_rows.all()}
+    doctor_rows = await session.execute(select(Doctor.doctor_id, Doctor.doctor_name))
+    doctor_map = {row[0]: row[1] for row in doctor_rows.all()}
     all_items = []
     for r in res.scalars().all():
         prescriptions = to_list(r.prescriptions_json)
@@ -690,8 +703,8 @@ async def list_records_extended(
         item = {
             "id": r.id,
             "patient": r.patient_name or "",
-            "department": str(r.dept_id),
-            "doctor": str(r.doctor_id),
+            "department": dept_map.get(r.dept_id, str(r.dept_id)),
+            "doctor": doctor_map.get(r.doctor_id, str(r.doctor_id)),
             "createdAt": r.created_at,
             "status": r.status,
             "hasLab": len(labs) > 0,
@@ -711,3 +724,16 @@ async def list_records_extended(
     start = max(0, (page - 1) * pageSize)
     end = start + pageSize
     return ok({"list": all_items[start:end], "total": total, "page": page, "pageSize": pageSize})
+BASE_IMAGING_DICT = [
+    "胸片",
+    "腹部超声",
+    "头部CT",
+    "右臂X光",
+]
+
+BASE_LABS_DICT = [
+    "血常规",
+    "尿常规",
+    "肝功能",
+    "过敏原筛查",
+]

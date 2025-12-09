@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { getRecordTemplates, createRecordTemplate, updateRecordTemplate, deleteRecordTemplate, getRecordDictionaries } from '@/api/record'
+import { getRecordTemplates, createRecordTemplate, updateRecordTemplate, deleteRecordTemplate, getRecordDictionaries, getRecordDictionaryImaging, getRecordDictionaryLabs } from '@/api/record'
 
 const route = useRoute()
 const router = useRouter()
@@ -27,11 +27,22 @@ async function loadTemplates() {
     if (res.code === 200) templates.value = res.data
     const dict = await getRecordDictionaries()
     if (dict.code === 200) {
-      imagingOpts.value = (dict.data.imaging || []).map(v => ({ label: String(v), value: String(v) }))
-      labOpts.value = (dict.data.labs || []).map(v => ({ label: String(v), value: String(v) }))
+      const imgs = (dict.data.imaging || []).map(v => ({ label: String(v), value: String(v) }))
+      const labs = (dict.data.labs || []).map(v => ({ label: String(v), value: String(v) }))
+      imagingOpts.value = imgs
+      labOpts.value = labs
+    }
+    if (!imagingOpts.value.length) {
+      const r = await getRecordDictionaryImaging()
+      if (r.code === 200) imagingOpts.value = (r.data || []).map(v => ({ label: String(v), value: String(v) }))
+    }
+    if (!labOpts.value.length) {
+      const r = await getRecordDictionaryLabs()
+      if (r.code === 200) labOpts.value = (r.data || []).map(v => ({ label: String(v), value: String(v) }))
     }
   } catch {
-    message.error('加载模板失败')
+    imagingOpts.value = []
+    labOpts.value = []
   } finally {
     loading.value = false
   }

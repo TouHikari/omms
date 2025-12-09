@@ -2,8 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import { useAuthStore } from '@/stores/auth'
-import { updateRecord, getRecordDictionaries } from '@/api/record'
-import { patientProfiles } from '@/api/mockData'
+import { updateRecord, getRecordDictionaries, getRecordDictionaryImaging, getRecordDictionaryLabs, getPatients } from '@/api/record'
 
 const props = defineProps({
   currentMenu: { type: String, required: true },
@@ -38,7 +37,7 @@ watch(() => props.currentMenu, (m) => {
     if (key === 'list_by_patient') modeFilter.value = 'by_patient'
     else if (key === 'list_by_doctor') modeFilter.value = 'by_doctor'
     else if (key === 'list_by_date') modeFilter.value = 'by_date'
-    else if (key === 'list_lab_imaging') modeFilter.value = 'lab_imaging'
+    else if (key === 'list_by_status') modeFilter.value = 'by_status'
     else if (key.startsWith('list_status_')) {
       modeFilter.value = 'by_status'
       statusFilter.value = key.replace('list_status_', '')
@@ -48,17 +47,23 @@ watch(() => props.currentMenu, (m) => {
 }, { immediate: true })
 
 watch(modeFilter, (s) => {
-  const map = { all: 'list_all', by_patient: 'list_by_patient', by_doctor: 'list_by_doctor', by_date: 'list_by_date', lab_imaging: 'list_lab_imaging' }
-  const targetMenu = s === 'by_status' ? `list_status_${statusFilter.value}` : (map[s] || 'list_all')
+  const map = {
+    all: 'list_all',
+    by_patient: 'list_by_patient',
+    by_doctor: 'list_by_doctor',
+    by_date: 'list_by_date',
+    lab_imaging: 'list_lab_imaging',
+    by_status: 'list_by_status',
+  }
+  const targetMenu = map[s] || 'list_all'
   const key = (props.currentMenu || '')
   if (key.startsWith('list_') && targetMenu !== props.currentMenu) props.setMenu(targetMenu)
   currentPage.value = 1
 })
 
-watch(statusFilter, (st) => {
+watch(statusFilter, () => {
   if (modeFilter.value === 'by_status') {
-    const targetMenu = `list_status_${st}`
-    if (targetMenu !== props.currentMenu) props.setMenu(targetMenu)
+    if (props.currentMenu !== 'list_by_status') props.setMenu('list_by_status')
     currentPage.value = 1
   }
 })
@@ -112,17 +117,33 @@ const filteredRecords = computed(() => {
 const detailVisible = ref(false)
 const detailRecord = ref(null)
 
-const patientsByName = patientProfiles
+const patientsByName = ref({})
+
+async function ensurePatientLoaded(name) {
+  const key = (name || '').trim()
+  if (!key) return
+  if (patientsByName.value[key]) return
+  try {
+    const res = await getPatients(key)
+    if (res.code === 200) {
+      const item = (res.data?.list || []).find(p => (p.name || '').trim() === key)
+      if (item) patientsByName.value[key] = item
+    }
+  } catch {
+    message.warning('加载患者资料失败')
+  }
+}
 
 const currentPatient = computed(() => {
   const r = detailRecord.value
   if (!r) return null
-  const p = patientsByName[r.patient]
+  const p = patientsByName.value[r.patient]
   return p ? p : { patient_id: '-', user_id: '-', name: r.patient, gender: '-', birthday: '-', id_card: '-', address: '-', emergency_contact: '-', emergency_phone: '-' }
 })
 
-function showDetail(record) {
+async function showDetail(record) {
   detailRecord.value = record
+  await ensurePatientLoaded(record.patient)
   detailVisible.value = true
 }
 
@@ -148,8 +169,18 @@ const labOpts = ref([])
   try {
     const dict = await getRecordDictionaries()
     if (dict.code === 200) {
-      imagingOpts.value = (dict.data.imaging || []).map(v => ({ label: String(v), value: String(v) }))
-      labOpts.value = (dict.data.labs || []).map(v => ({ label: String(v), value: String(v) }))
+      const imgs = (dict.data.imaging || []).map(v => ({ label: String(v), value: String(v) }))
+      const labs = (dict.data.labs || []).map(v => ({ label: String(v), value: String(v) }))
+      imagingOpts.value = imgs
+      labOpts.value = labs
+    }
+    if (!imagingOpts.value.length) {
+      const r = await getRecordDictionaryImaging()
+      if (r.code === 200) imagingOpts.value = (r.data || []).map(v => ({ label: String(v), value: String(v) }))
+    }
+    if (!labOpts.value.length) {
+      const r = await getRecordDictionaryLabs()
+      if (r.code === 200) labOpts.value = (r.data || []).map(v => ({ label: String(v), value: String(v) }))
     }
   } catch {
     imagingOpts.value = []
@@ -218,7 +249,6 @@ async function submitEdit() {
           <a-radio-button value="by_patient">按患者</a-radio-button>
           <a-radio-button value="by_doctor">按医生</a-radio-button>
           <a-radio-button value="by_date">按日期</a-radio-button>
-          <a-radio-button value="lab_imaging">检验/检查结果</a-radio-button>
           <a-radio-button value="by_status">按状态</a-radio-button>
         </a-radio-group>
         <a-radio-group v-if="modeFilter === 'by_status'" v-model:value="statusFilter" style="margin-left: 12px">
