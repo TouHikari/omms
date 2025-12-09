@@ -225,39 +225,47 @@ const setMenu = (menuKey) => {
   >
     <!-- Top Metrics Area -->
     <template #metrics>
-      <div class="metrics-container">
-        <a-card class="metric-card primary" :bordered="false" @click="setMenu('view_overview')">
-          <a-statistic :value="metrics.visits" suffix="人次">
-            <template #title>
-              <span class="metric-title"><UserOutlined /> 今日就诊</span>
-            </template>
-          </a-statistic>
-        </a-card>
+      <a-row :gutter="[16, 16]" class="metrics-row">
+        <a-col :xs="24" :sm="12" :xl="6">
+          <a-card class="metric-card primary" :bordered="false" @click="setMenu('view_overview')">
+            <a-statistic :value="metrics.visits" suffix="人次">
+              <template #title>
+                <span class="metric-title"><UserOutlined /> 今日就诊</span>
+              </template>
+            </a-statistic>
+          </a-card>
+        </a-col>
 
-        <a-card class="metric-card success" :bordered="false" @click="setMenu('view_work')">
-          <a-statistic :value="metrics.pendingAppts" suffix="待办">
-            <template #title>
-              <span class="metric-title"><ScheduleOutlined /> 预约候诊</span>
-            </template>
-          </a-statistic>
-        </a-card>
+        <a-col :xs="24" :sm="12" :xl="6">
+          <a-card class="metric-card success" :bordered="false" @click="setMenu('view_work')">
+            <a-statistic :value="metrics.pendingAppts" suffix="待办">
+              <template #title>
+                <span class="metric-title"><ScheduleOutlined /> 预约候诊</span>
+              </template>
+            </a-statistic>
+          </a-card>
+        </a-col>
 
-        <a-card class="metric-card warning" :bordered="false" @click="setMenu('view_work')">
-          <a-statistic :value="metrics.lowStock" suffix="项">
-            <template #title>
-              <span class="metric-title"><AlertOutlined /> 库存预警</span>
-            </template>
-          </a-statistic>
-        </a-card>
+        <a-col :xs="24" :sm="12" :xl="6">
+          <a-card class="metric-card warning" :bordered="false" @click="setMenu('view_work')">
+            <a-statistic :value="metrics.lowStock" suffix="项">
+              <template #title>
+                <span class="metric-title"><AlertOutlined /> 库存预警</span>
+              </template>
+            </a-statistic>
+          </a-card>
+        </a-col>
 
-        <a-card class="metric-card info" :bordered="false" @click="setMenu('view_work')">
-          <a-statistic :value="metrics.pendingRx" suffix="单">
-            <template #title>
-              <span class="metric-title"><MedicineBoxOutlined /> 待审处方</span>
-            </template>
-          </a-statistic>
-        </a-card>
-      </div>
+        <a-col :xs="24" :sm="12" :xl="6">
+          <a-card class="metric-card info" :bordered="false" @click="setMenu('view_work')">
+            <a-statistic :value="metrics.pendingRx" suffix="单">
+              <template #title>
+                <span class="metric-title"><MedicineBoxOutlined /> 待审处方</span>
+              </template>
+            </a-statistic>
+          </a-card>
+        </a-col>
+      </a-row>
     </template>
 
     <!-- Panel: Overview -->
@@ -419,10 +427,7 @@ const setMenu = (menuKey) => {
 <style lang="scss" scoped>
 @use '@/assets/_variables.scss' as *;
 
-.metrics-container {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+.metrics-row {
   margin-bottom: 8px;
 }
 
@@ -525,17 +530,5 @@ const setMenu = (menuKey) => {
 
 .h-full {
   height: 100%;
-}
-
-@container (max-width: $breakpoint-lg) {
-  .metrics-container {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@container (max-width: $breakpoint-sm) {
-  .metrics-container {
-    grid-template-columns: 1fr;
-  }
 }
 </style>
