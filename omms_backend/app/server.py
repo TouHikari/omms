@@ -96,5 +96,6 @@ app.openapi_tags = [
     {"name": "departments", "description": "科室管理接口"},
     {"name": "doctors", "description": "医生管理接口"},
     {"name": "schedules", "description": "排班查询接口"},
+    {"name": "pharmacy", "description": "药品与库存管理接口"},
 ]
 app.include_router(get_api_router(), prefix="/api")

@@ -142,6 +142,19 @@ async def seed_app_tables(
         await session.execute(delete(Doctor))
         await session.execute(delete(Department))
         await session.execute(delete(Patient))
+        # pharmacy clears
+        from app.models.medicine import Medicine
+        from app.models.inventory import InventoryBatch, InventoryLog, MedicineStock
+        from app.models.prescription import Prescription, PrescriptionItem
+        from app.models.supplier import Supplier, SupplierOrder, SupplierOrderItem
+        await session.execute(delete(SupplierOrderItem))
+        await session.execute(delete(SupplierOrder))
+        await session.execute(delete(PrescriptionItem))
+        await session.execute(delete(Prescription))
+        await session.execute(delete(InventoryLog))
+        await session.execute(delete(InventoryBatch))
+        await session.execute(delete(Medicine))
+        await session.execute(delete(Supplier))
         await session.commit()
 
         now_dt = datetime.now()
@@ -478,6 +491,7 @@ async def seed_app_tables(
             slots = [m for m in range(0, max(0, duration_min - step), step)]
             count = random.randint(2, min(6, len(slots)))
             pick_offsets = random.sample(slots, k=count)
+            
             patients_pick = random.sample(patient_objs, k=count)
             used_count = 0
             for off, p in zip(pick_offsets, patients_pick):
@@ -546,6 +560,162 @@ async def seed_app_tables(
             )
             rec_objs.append(rec)
         session.add_all(rec_objs)
+        await session.commit()
+
+        # ===== Pharmacy seed data =====
+        from app.models.medicine import Medicine
+        from app.models.inventory import InventoryBatch, InventoryLog
+        from app.models.prescription import Prescription, PrescriptionItem
+        from app.models.supplier import Supplier, SupplierOrder, SupplierOrderItem
+
+        med_names = [
+            "对乙酰氨基酚片","布洛芬缓释胶囊","氯雷他定片","阿莫西林胶囊","维生素C片","头孢克肟片","洛伐他汀片","赖氨酸片","复方甘草片","甲硝唑片",
+            "雷贝拉唑片","多维元素片","阿卡波糖片","氨溴索片","左氧氟沙星片","小儿止咳糖浆","复方黄连素片","葡萄糖酸钙片","复合维生素B片","盐酸小檗碱片",
+            "二甲双胍片","依那普利片","缬沙坦片","氢氯噻嗪片","氯化钠注射液","葡萄糖注射液","乳酸林格注射液","阿司匹林肠溶片","奥美拉唑肠溶胶囊","藿香正气胶囊",
+            "蒙脱石散","硝苯地平片","硫酸氢氯吡格雷片","苯磺酸氨氯地平片","硝酸甘油片","硝酸异山梨酯片","利福平胶囊","阿奇霉素片","氯雷他定糖浆","双氯芬酸钠缓释片"
+        ]
+        units = ["盒","瓶","袋"]
+        specs = ["0.5g*20片/盒","10mg*12片/盒","0.3g*10粒/盒","200ml/瓶","3g*10袋/盒"]
+
+        med_objs: list[Medicine] = []
+        stock_objs: list[MedicineStock] = []
+        for i in range(max(seed_count * 3, 60)):
+            nm = random.choice(med_names)
+            sp = random.choice(specs)
+            unit = random.choice(units)
+            price = round(random.uniform(5.0, 60.0), 2)
+            warn = random.randint(20, 80)
+            stock = random.randint(0, 200)
+            m = Medicine(
+                medicine_name=nm,
+                specification=sp,
+                dosage_form="片剂",
+                manufacturer="示例制药厂",
+                unit=unit,
+                price=price,
+                warning_stock=warn,
+                created_at=now_dt,
+                updated_at=now_dt,
+            )
+            med_objs.append(m)
+        session.add_all(med_objs)
+        await session.commit()
+        for m in med_objs:
+            stock_objs.append(MedicineStock(medicine_id=m.medicine_id, current_stock=random.randint(0, 200)))
+        session.add_all(stock_objs)
+        await session.commit()
+
+        batch_objs: list[InventoryBatch] = []
+        log_objs: list[InventoryLog] = []
+        for med in med_objs:
+            bi = random.randint(1, 3)
+            for k in range(bi):
+                received = (now_dt - timedelta(days=random.randint(1, 60))).date()
+                expiry = (received + timedelta(days=random.randint(120, 720)))
+                qty = random.randint(10, 120)
+                bno = f"B{received.strftime('%Y%m%d')}-{int(med.medicine_id):04d}-{k+1:02d}"
+                b = InventoryBatch(medicine_id=med.medicine_id, batch_no=bno, quantity=qty, received_at=received, expiry_date=expiry)
+                batch_objs.append(b)
+                log_objs.append(InventoryLog(type="in", medicine_id=med.medicine_id, quantity=qty, note=f"入库批次 {bno}", batch_no=bno, time=datetime.combine(received, datetime.min.time())))
+        session.add_all(batch_objs)
+        session.add_all(log_objs)
+        await session.commit()
+
+        # Suppliers and Orders
+        supplier_names = ["华康药业","齐鲁制药经销","上药集团","同仁堂配送","九州通医药","国药控股","海王星辰供应","健民药业","上药科园","石药集团"]
+        suppliers: list[Supplier] = []
+        for i in range(max(seed_count, 30)):
+            nm = random.choice(supplier_names)
+            s = Supplier(name=f"{nm}-{i+1:02d}", contact=random.choice(["刘女士","王先生","张经理","李主管","赵主任"]), phone=f"010-{random.randint(10000000,99999999)}", address="北京市")
+            suppliers.append(s)
+        session.add_all(suppliers)
+        await session.commit()
+
+        orders: list[SupplierOrder] = []
+        order_ids: set[str] = set()
+        order_items: list[SupplierOrderItem] = []
+        for i in range(max(seed_count * 2, 60)):
+            sid = random.choice(suppliers).id
+            today = now_dt.strftime("%Y%m%d")
+            # 生成不重复的订单号 PO-YYYYMMDD-XXXX
+            while True:
+                oid_try = f"PO-{today}-{random.randint(1000,9999)}"
+                if oid_try not in order_ids:
+                    order_ids.add(oid_try)
+                    oid = oid_try
+                    break
+            o = SupplierOrder(id=oid, supplier_id=sid, created_at=now_dt, status=random.choice(["pending","completed"]), amount=0.0)
+            orders.append(o)
+            session.add(o)
+            await session.flush()
+            cnt = random.randint(1, 4)
+            amount = 0.0
+            for _ in range(cnt):
+                med = random.choice(med_objs)
+                qty = random.randint(10, 150)
+                price = float(med.price)
+                item = SupplierOrderItem(order_id=o.id, medicine_id=med.medicine_id, name=med.medicine_name, qty=qty, unit=med.unit, price=price)
+                order_items.append(item)
+                amount += price * qty
+            o.amount = amount
+        session.add_all(order_items)
+        await session.commit()
+
+        # 入库已完成订单
+        for o in orders:
+            if o.status == "completed":
+                for it in [x for x in order_items if x.order_id == o.id]:
+                    batch_no = f"B-{o.id}-{it.medicine_id}"
+                    b = InventoryBatch(medicine_id=it.medicine_id, batch_no=batch_no, quantity=it.qty, received_at=now_dt.date())
+                    l = InventoryLog(type="in", medicine_id=it.medicine_id, quantity=it.qty, note=f"订单入库 {o.id}", batch_no=batch_no, time=now_dt)
+                    session.add(b)
+                    session.add(l)
+                    # 增加库存
+                    for s in stock_objs:
+                        if s.medicine_id == it.medicine_id:
+                            s.current_stock = int(s.current_stock or 0) + int(it.qty)
+                            break
+        await session.commit()
+
+        # Prescriptions
+        rx_list: list[Prescription] = []
+        rx_ids: set[str] = set()
+        rx_items: list[PrescriptionItem] = []
+        for i in range(max(seed_count * 2, 50)):
+            dt = (now_dt - timedelta(days=random.randint(0, 7), hours=random.randint(0, 12)))
+            # 生成不重复的处方号 RX-YYYYMMDD-XXXX
+            while True:
+                pid_try = f"RX-{dt.strftime('%Y%m%d')}-{random.randint(1000,9999)}"
+                if pid_try not in rx_ids:
+                    rx_ids.add(pid_try)
+                    pid = pid_try
+                    break
+            pat = random.choice(patient_objs)
+            doc = random.choice(doctor_objs)
+            dept_name = None
+            for d in dept_objs:
+                if d.dept_id == doc.dept_id:
+                    dept_name = d.dept_name
+                    break
+            status = random.choice(["pending","approved","dispensed"])
+            rx = Prescription(id=pid, patient=pat.name, department=dept_name or "内科", doctor=doc.doctor_name, created_at=dt, status=status)
+            rx_list.append(rx)
+            session.add(rx)
+            await session.flush()
+            cnt = random.randint(1, 3)
+            for _ in range(cnt):
+                med = random.choice(med_objs)
+                qty = random.randint(1, 3)
+                it = PrescriptionItem(prescription_id=rx.id, medicine_id=med.medicine_id, name=med.medicine_name, qty=qty, unit=med.unit, price=float(med.price))
+                rx_items.append(it)
+                # 若已发药，扣减库存并写日志
+                if status == "dispensed":
+                    for s in stock_objs:
+                        if s.medicine_id == med.medicine_id and s.current_stock >= qty:
+                            s.current_stock = int(s.current_stock) - int(qty)
+                            session.add(InventoryLog(type="out", medicine_id=med.medicine_id, quantity=qty, note=f"处方发药 {rx.id}", time=dt))
+                            break
+        session.add_all(rx_items)
         await session.commit()
 
     await engine_obj.dispose()
