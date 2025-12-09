@@ -19,8 +19,19 @@ const router = useRouter()
 
 // --- State Management ---
 const loading = ref(false)
-const dailyDate = ref(new Date().toISOString().slice(0, 10))
-const monthlyKey = ref(new Date().toISOString().slice(0, 7))
+
+// Helper for local date string YYYY-MM-DD
+const getLocalToday = () => {
+  const d = new Date()
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+const todayStr = getLocalToday()
+
+const dailyDate = ref(todayStr)
+const monthlyKey = ref(todayStr.slice(0, 7))
 
 // Data Collections
 const appointments = ref([])
@@ -124,16 +135,38 @@ const deptLoad = computed(() => {
 
 // Overview: Recent Activities (Timeline)
 const recentActivities = computed(() => {
-  // Combine visits and logs, sort by time (mocking time for visits as they might only have date)
-  // Assuming visits have 'time' field HH:mm:ss from API mock, or just order by index
+  const today = dailyDate.value
+
+  // 1. Process Visits (already filtered by today in backend/API usually)
   const visits = dailyVisits.value.map(v => ({
     type: 'visit',
-    time: v.time || '00:00',
+    rawTime: `${today} ${v.time || '00:00:00'}`,
+    displayTime: v.time || '00:00',
     content: `患者 ${v.patient} 完成了 ${v.department} 就诊`,
-    color: 'blue'
+    color: 'blue',
+    timestamp: new Date(`${today} ${v.time || '00:00:00'}`).getTime()
   }))
-  // Take last 5
-  return visits.slice(-6).reverse()
+
+  // 2. Process Inventory Logs (filter for today)
+  const logs = inventoryLogs.value
+    .filter(l => l.time && l.time.startsWith(today))
+    .map(l => {
+      const isIn = l.type === 'in'
+      const timePart = l.time.split(' ')[1]?.slice(0, 5) || '00:00'
+      return {
+        type: 'inventory',
+        rawTime: l.time,
+        displayTime: timePart,
+        content: `${isIn ? '入库' : '出库'} ${l.medicine || '未知药品'} ${l.quantity} ${l.specification || ''}`,
+        color: isIn ? 'green' : 'orange',
+        timestamp: new Date(l.time).getTime()
+      }
+    })
+
+  // 3. Combine, Sort, and Slice
+  return [...visits, ...logs]
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 8)
 })
 
 // Workbench: Pending Appointments
@@ -233,16 +266,16 @@ const setMenu = (menuKey) => {
         <a-row :gutter="[24, 24]">
           <!-- Left: Real-time Timeline -->
           <a-col :xs="24" :lg="14">
-            <a-card title="今日实时动态" :bordered="false" class="h-full">
+            <a-card :title="`${dailyDate === todayStr ? '今日' : dailyDate} 动态`" :bordered="false" class="h-full">
               <template #extra>
-                <a-tag color="blue">{{ dailyDate }}</a-tag>
+                <a-date-picker v-model:value="dailyDate" :allowClear="false" value-format="YYYY-MM-DD" />
               </template>
               <div v-if="recentActivities.length === 0" class="empty-state">
-                <a-empty description="暂无今日动态" />
+                <a-empty description="暂无动态数据" />
               </div>
               <a-timeline v-else mode="left">
                 <a-timeline-item v-for="(act, idx) in recentActivities" :key="idx" :color="act.color">
-                  <span class="timeline-time">{{ act.time }}</span>
+                  <span class="timeline-time">{{ act.displayTime }}</span>
                   <span class="timeline-content">{{ act.content }}</span>
                 </a-timeline-item>
               </a-timeline>
@@ -251,7 +284,7 @@ const setMenu = (menuKey) => {
 
           <!-- Right: Department Distribution -->
           <a-col :xs="24" :lg="10">
-            <a-card title="今日科室负荷" :bordered="false" class="h-full">
+            <a-card :title="`${dailyDate === todayStr ? '今日' : dailyDate} 科室负荷`" :bordered="false" class="h-full">
               <div v-if="deptLoad.length === 0" class="empty-state">
                 <a-empty description="暂无数据" />
               </div>
