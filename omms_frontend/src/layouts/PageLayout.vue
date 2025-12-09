@@ -99,4 +99,22 @@ function onChange(key) {
     gap: 8px;
   }
 }
+
+:deep(.ant-page-header-heading-title) {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
+  white-space: nowrap;
+}
+
+:deep(.ant-page-header-heading-sub-title) {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
+}
 </style>

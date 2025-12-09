@@ -25,6 +25,7 @@
     <div class="actions">
       <div class="mobile-menu-trigger" role="button" @click="mobileMenuOpen = true">
         <MenuOutlined class="action-icon" />
+        <span style="font-size: 14px; padding-left: 5px; white-space: nowrap;">菜单</span>
       </div>
       <div class="search-trigger">
         <a-popover placement="bottomRight">

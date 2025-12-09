@@ -114,11 +114,11 @@ watch(() => props.currentMenu, (m) => {
     </a-card>
 
     <a-card v-if="selectedKey === 'daily_visits'" title="就诊日报" :bordered="false">
-      <a-table :columns="visitColumns" :data-source="visits" row-key="id" :pagination="{ pageSize: 10 }" />
+      <a-table :columns="visitColumns" :data-source="visits" row-key="id" :pagination="{ pageSize: 10 }" :scroll="{ x: 860 }" />
     </a-card>
 
     <a-card v-else-if="selectedKey === 'daily_drugs'" title="药品使用日报" :bordered="false">
-      <a-table :columns="drugColumns" :data-source="drugs" row-key="id" :pagination="{ pageSize: 10 }" />
+      <a-table :columns="drugColumns" :data-source="drugs" row-key="id" :pagination="{ pageSize: 10 }" :scroll="{ x: 860 }" />
     </a-card>
 
     <a-card v-else title="导出 CSV" :bordered="false">

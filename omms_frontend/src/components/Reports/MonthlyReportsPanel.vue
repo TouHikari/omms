@@ -100,11 +100,11 @@ async function onExport() {
     </a-card>
 
     <a-card v-if="selectedKey === 'monthly_visits'" title="就诊月报" :bordered="false">
-      <a-table :columns="visitColumns" :data-source="visits" row-key="date" :pagination="{ pageSize: 31 }" />
+      <a-table :columns="visitColumns" :data-source="visits" row-key="date" :pagination="{ pageSize: 31 }" :scroll="{ x: 860 }" />
     </a-card>
 
     <a-card v-else-if="selectedKey === 'monthly_drugs'" title="药品使用月报" :bordered="false">
-      <a-table :columns="drugColumns" :data-source="drugs" row-key="date" :pagination="{ pageSize: 31 }" />
+      <a-table :columns="drugColumns" :data-source="drugs" row-key="date" :pagination="{ pageSize: 31 }" :scroll="{ x: 860 }" />
     </a-card>
 
     <a-card v-else title="导出 CSV" :bordered="false">

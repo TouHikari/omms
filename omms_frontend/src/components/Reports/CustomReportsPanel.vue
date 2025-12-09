@@ -112,7 +112,7 @@ onMounted(() => fetchRows())
           <span style="margin-right: 12px">选择字段：</span>
           <a-checkbox-group v-model:value="selectedFields" :options="fieldOptions" />
         </div>
-        <a-table :columns="buildColumns()" :data-source="rows" row-key="id" :pagination="{ pageSize: 8 }" />
+        <a-table :columns="buildColumns()" :data-source="rows" row-key="id" :pagination="{ pageSize: 8 }" :scroll="{ x: 860 }" />
         <div style="display: flex; justify-content: flex-end">
           <a-button type="primary" @click="onExport">导出 CSV</a-button>
         </div>
