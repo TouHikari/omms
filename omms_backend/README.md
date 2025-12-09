@@ -2,7 +2,7 @@
 
 ## 简介
 
-在线医疗管理系统 (OMMS) 的后端服务，基于 Python 3 和 FastAPI 框架开发。提供 RESTful API 接口，支持预约挂号、病历管理、药品库存、在线支付等核心功能。
+在线医疗管理系统 (OMMS) 的后端服务，基于 Python 3 和 FastAPI 框架开发。提供 RESTful API 接口，支持预约挂号、病历管理、药房管理（进销存）、报表统计等核心功能。
 
 ## 技术栈
 
@@ -15,16 +15,30 @@
 - **数据库**: MySQL 5.5.62
 - **认证**: JWT (JSON Web Tokens)
 
-## 目录结构 (规划)
+## 目录结构
 
 ```
 omms_backend/
 ├── app/
 │   ├── api/            # API 路由定义
-│   ├── core/           # 核心配置 (统一响应等)
-│   ├── db/             # 数据库连接与会话
+│   │   ├── appointments/ # 预约、科室、医生、排班模块
+│   │   ├── auth.py       # 认证模块
+│   │   ├── pharmacy.py   # 药房模块
+│   │   ├── records.py    # 病历模块
+│   │   ├── reports.py    # 报表统计模块
+│   │   └── __init__.py   # 路由聚合
+│   ├── core/           # 核心配置 (统一响应、认证依赖、安全配置等)
+│   ├── db/             # 数据库连接与会话管理
 │   ├── models/         # SQLAlchemy 数据模型
-│   │   ├── __init__.py # Base 声明
+│   │   ├── __init__.py     # Base 声明
+│   │   ├── appointment.py  # 预约相关模型
+│   │   ├── inventory.py    # 库存相关模型
+│   │   ├── medicine.py     # 药品信息模型
+│   │   ├── patient.py      # 患者信息模型
+│   │   ├── prescription.py # 处方相关模型
+│   │   ├── record.py       # 病历相关模型
+│   │   ├── supplier.py     # 供应商相关模型
+│   │   └── user.py         # 系统用户模型
 │   ├── schemas/        # Pydantic 数据验证模型 (DTOs)
 │   ├── server.py       # 应用入口
 │   └── settings.py     # 环境变量与数据库配置
@@ -78,14 +92,6 @@ source venv/bin/activate
 
 ```bash
 pip install -r requirements.txt
-# 或者如果使用 poetry
-# poetry install
-```
-
-_(注意：项目初期可能暂无 `requirements.txt`，请先安装核心依赖)_
-
-```bash
-pip install fastapi uvicorn[standard] sqlalchemy pymysql aiomysql pydantic pydantic-settings alembic python-jose[cryptography] passlib[bcrypt] python-multipart python-dotenv
 ```
 
 ### 5. 配置环境变量
@@ -94,7 +100,7 @@ pip install fastapi uvicorn[standard] sqlalchemy pymysql aiomysql pydantic pydan
 
 ```ini
 # .env
-PROJECT_NAME="OMMS"
+PROJECT_NAME="OMMS Backend"
 API_V1_STR=""
 
 # Database
@@ -124,8 +130,8 @@ CREATE DATABASE medical_system CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 # 初始化 alembic (如果是第一次)
 # alembic init alembic
 
-# 生成迁移脚本
-alembic revision --autogenerate -m "Initial migration"
+# 生成迁移脚本 (仅在修改模型后需要)
+# alembic revision --autogenerate -m "Add pharmacy tables"
 
 # 应用迁移
 alembic upgrade head
@@ -133,48 +139,29 @@ alembic upgrade head
 
 ### 7. 开发数据一键初始化
 
-使用脚本快速迁移结构并清洗/导入预设数据，支持本地与服务器：
+使用脚本快速迁移结构并清洗/导入预设数据（包含科室、医生、患者、药品、库存、处方等演示数据）：
 
 ```powershell
 # 查看帮助
-python omms_backend/scripts/init_db.py --help
+python scripts/init_db.py --help
 
 # 常用：迁移结构 + 清洗并灌入演示数据（默认模式，适合经常运行）
-python omms_backend/scripts/init_db.py --mode app
+python scripts/init_db.py --mode app
 
 # 仅迁移结构（不执行 docs/omms.sql，不删库）
-python omms_backend/scripts/init_db.py --mode migrate
+python scripts/init_db.py --mode migrate
 
 # 完整建库（执行 docs/omms.sql 的 DROP/CREATE），再灌入演示数据
-python omms_backend/scripts/init_db.py --mode full
+python scripts/init_db.py --mode full
 
 # 指定 SQL 文件路径（配合 --mode full）
-python omms_backend/scripts/init_db.py --mode full --sql D:/data/omms.sql
-
-# 使用 SQLite（本地测试）
-python omms_backend/scripts/init_db.py --sqlite --mode app --seed-count 20
-
-# 自定义数据库连接（覆盖 `.env` 的 MySQL 连接）
-python omms_backend/scripts/init_db.py --dsn "mysql+aiomysql://user:pass@host:3306/medical_system" --mode app
+python scripts/init_db.py --mode full --sql D:/data/omms.sql
 ```
 
-脚本行为说明：
-
-- 结构迁移（无删库）：
-  - 自动对齐与后端模型一致的列、索引与外键，包括：
-    - `departments`: 增加 `parent_id`、`sort_order`
-    - `doctors`: 将 `name` 调整为 `doctor_name`、增加 `dept_id` 外键、将 `intro` 调整为 `introduction`、移除旧 `department` 文本列
-    - `doctor_schedules`: 增加 `booked`
-    - `appointments`: 增加 `schedule_id` 及外键
-  - 若结构已正确，迁移步骤将跳过（幂等）。
-- 数据清洗与写入（示例数据）：
-  - 清空并写入：`departments`、`doctors`、`doctor_schedules`、`appointments`、`patients`、`medical_records`、`record_templates`
-  - 用户数据通过 `upsert` 写入，避免重复。
-
-建议：
-
-- 经常运行建议使用 `--mode app`，该模式会先进行“结构迁移”，然后清洗并灌入演示数据，不删除数据库或表。
-- 仅需修复库结构时使用 `--mode migrate`；需要彻底重建时使用 `--mode full`。
+脚本会自动处理：
+- 数据库表结构同步
+- 初始化基础数据（科室、医生、药品目录）
+- 生成模拟业务数据（患者、预约、病历、处方、库存变动）
 
 ### 8. 启动服务
 
@@ -191,10 +178,23 @@ uvicorn app.server:app --reload --host 0.0.0.0 --port 8000
 - Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
 - ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
-## 架构说明
+## 功能模块
 
-- 新增业务路由置于 `app/api/`，通过 `app/api/__init__.py` 聚合后由 `app/server.py` 在 `"/api"` 前缀下统一挂载。
-- 路由前缀：`/api` 当前固定；`API_V1_STR` 尚未启用，后续如需版本化可与该变量结合使用。
+### 核心业务
+- **预约挂号**: 科室管理、医生排班、患者预约、号源管理。
+- **病历管理**: 电子病历（EMR）、病历模板、诊断记录。
+- **药房管理**:
+    - **药品库**: 药品基础信息、规格、生产厂家。
+    - **库存**: 批次管理、入库、出库、有效期预警、低库存预警。
+    - **供应商**: 供应商信息与采购订单。
+    - **处方**: 处方开立、审核与发药。
+- **报表统计**:
+    - **就诊日报/月报**: 门诊量、预约量统计。
+    - **药品统计**: 药品销售排行、发药量统计。
+
+### 系统管理
+- **认证授权**: 基于 JWT 的用户认证，支持多角色（管理员、医生、护士、患者）。
+- **权限控制**: 基于角色的访问控制 (RBAC)。
 
 ## 开发规范
 
@@ -210,8 +210,3 @@ uvicorn app.server:app --reload --host 0.0.0.0 --port 8000
   - `GET /api/auth/me` 获取当前登录用户信息
 - 请求头：`Authorization: Bearer <accessToken>`。
 - 鉴权范围：`/api` 前缀下除 `auth` 路由外的所有接口均需携带有效 JWT。
-- 角色与权限：
-  - 四种身份组：`ADMIN`、`DOCTOR`、`NURSE`、`PATIENT`
-  - 可在路由中使用依赖实现细粒度控制：
-    - 按角色：`Depends(require_role_in(["ADMIN", "DOCTOR"]))`
-    - 按权限码：`Depends(require_perm_codes(["record:manage"]))`
