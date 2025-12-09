@@ -40,7 +40,6 @@ const router = createRouter({
             label: '关键指标',
             children: [
               { key: 'kpi_appointments', label: '预约KPI' },
-              { key: 'kpi_revenue', label: '收入KPI' },
               { key: 'kpi_pharmacy', label: '药品使用KPI' },
             ]
           },
@@ -49,7 +48,6 @@ const router = createRouter({
             label: '趋势分析',
             children: [
               { key: 'trend_visits', label: '就诊趋势' },
-              { key: 'trend_revenue', label: '收入趋势' },
               { key: 'trend_drugs', label: '药品消耗趋势' },
               { key: 'trend_patients', label: '患者分布趋势' },
             ]
@@ -270,16 +268,14 @@ const router = createRouter({
             children: [
               { key: 'monthly_visits', label: '就诊月报' },
               { key: 'monthly_drugs', label: '药品使用月报' },
-              { key: 'monthly_compare', label: '趋势对比' },
+              { key: 'monthly_export', label: '导出CSV' },
             ]
           },
           {
             key: 'sub_custom',
             label: '自定义报表',
             children: [
-              { key: 'custom_filters', label: '筛选条件' },
-              { key: 'custom_fields', label: '字段选择' },
-              { key: 'custom_save', label: '保存模板' },
+              { key: 'custom_export', label: '导出自定义报表' },
             ]
           },
         ],
