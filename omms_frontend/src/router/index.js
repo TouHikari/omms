@@ -26,32 +26,24 @@ const router = createRouter({
         title: '数据看板',
         sidebar: [
           {
-            key: 'sub_overview',
-            label: '总览',
+            key: 'sub_ops',
+            label: '运营中心',
             children: [
-              { key: 'overview_today', label: '今日概览' },
-              { key: 'overview_department', label: '科室概览' },
-              { key: 'overview_doctor', label: '医生概览' },
-              { key: 'overview_patient', label: '患者概览' },
+              { key: 'view_overview', label: '实时概览' },
             ]
           },
           {
-            key: 'sub_kpi',
-            label: '关键指标',
+            key: 'sub_work',
+            label: '工作台',
             children: [
-              { key: 'kpi_appointments', label: '预约KPI' },
-              { key: 'kpi_revenue', label: '收入KPI' },
-              { key: 'kpi_pharmacy', label: '药品使用KPI' },
+              { key: 'view_work', label: '事项处理' },
             ]
           },
           {
-            key: 'sub_trends',
-            label: '趋势分析',
+            key: 'sub_analysis',
+            label: '数据洞察',
             children: [
-              { key: 'trend_visits', label: '就诊趋势' },
-              { key: 'trend_revenue', label: '收入趋势' },
-              { key: 'trend_drugs', label: '药品消耗趋势' },
-              { key: 'trend_patients', label: '患者分布趋势' },
+              { key: 'view_analysis', label: '报表统计' },
             ]
           },
         ],
@@ -270,16 +262,14 @@ const router = createRouter({
             children: [
               { key: 'monthly_visits', label: '就诊月报' },
               { key: 'monthly_drugs', label: '药品使用月报' },
-              { key: 'monthly_compare', label: '趋势对比' },
+              { key: 'monthly_export', label: '导出CSV' },
             ]
           },
           {
             key: 'sub_custom',
             label: '自定义报表',
             children: [
-              { key: 'custom_filters', label: '筛选条件' },
-              { key: 'custom_fields', label: '字段选择' },
-              { key: 'custom_save', label: '保存模板' },
+              { key: 'custom_export', label: '导出自定义报表' },
             ]
           },
         ],

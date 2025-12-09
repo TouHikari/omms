@@ -33,6 +33,10 @@
 //  font-display: swap;
 //}
 
+:root {
+  color-scheme: light only;
+}
+
 html {
   //overflow-y: scroll;
   scroll-behavior: smooth;
