@@ -4,8 +4,7 @@ import { message } from 'ant-design-vue'
 import { FileTextOutlined, SolutionOutlined, MedicineBoxOutlined, PictureOutlined, ExperimentOutlined, LeftOutlined } from '@ant-design/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getDepartments, getDoctorsByDept } from '@/api/appointment'
-import { imagingOptions, labOptions } from '@/api/mockData'
-import { createRecord, getRecordTemplateById, getRecordTemplates } from '@/api/record'
+import { createRecord, getRecordTemplateById, getRecordTemplates, getRecordDictionaries, getRecordDictionaryImaging, getRecordDictionaryLabs } from '@/api/record'
 
 const router = useRouter()
 const route = useRoute()
@@ -32,6 +31,8 @@ const diagnosis = ref('')
 const prescriptions = ref([])
 const imaging = ref([])
 const labs = ref([])
+const imagingOpts = ref([])
+const labOpts = ref([])
 const recordResult = ref(null)
 const pendingTemplateDefaults = ref(null)
 
@@ -65,8 +66,24 @@ onMounted(async () => {
   try {
     const res = await getRecordTemplates()
     if (res.code === 200) templatesList.value = res.data
+    const dict = await getRecordDictionaries()
+    if (dict.code === 200) {
+      const imgs = (dict.data.imaging || []).map(v => ({ label: String(v), value: String(v) }))
+      const labs = (dict.data.labs || []).map(v => ({ label: String(v), value: String(v) }))
+      imagingOpts.value = imgs
+      labOpts.value = labs
+    }
+    if (!imagingOpts.value.length) {
+      const r = await getRecordDictionaryImaging()
+      if (r.code === 200) imagingOpts.value = (r.data || []).map(v => ({ label: String(v), value: String(v) }))
+    }
+    if (!labOpts.value.length) {
+      const r = await getRecordDictionaryLabs()
+      if (r.code === 200) labOpts.value = (r.data || []).map(v => ({ label: String(v), value: String(v) }))
+    }
   } catch {
-    message.error('加载模板列表失败')
+    imagingOpts.value = []
+    labOpts.value = []
   }
 })
 
@@ -232,7 +249,7 @@ function reset() {
       <div v-if="currentStep === 0">
         <a-spin :spinning="loading">
           <div class="grid-container">
-            <a-card v-for="dept in deptList" :key="dept.id" hoverable class="selection-card" @click="onSelectDept(dept)">
+            <a-card v-for="dept in deptList" :key="dept.id" hoverable :class="['selection-card', { active: selectedDept && selectedDept.id === dept.id }]" @click="onSelectDept(dept)">
               <template #cover>
                 <div class="card-icon bg-blue">
                   <SolutionOutlined />
@@ -296,7 +313,7 @@ function reset() {
             <a-button @click="prevStep" type="text"><LeftOutlined /> 返回</a-button>
             <span class="step-title">检查申请</span>
           </div>
-          <a-checkbox-group v-model:value="imaging" :options="imagingOptions" />
+          <a-checkbox-group v-model:value="imaging" :options="imagingOpts" />
           <div class="actions">
             <a-button type="primary" @click="nextStep">下一步</a-button>
           </div>
@@ -307,7 +324,7 @@ function reset() {
             <a-button @click="prevStep" type="text"><LeftOutlined /> 返回</a-button>
             <span class="step-title">检验申请</span>
           </div>
-          <a-checkbox-group v-model:value="labs" :options="labOptions" />
+          <a-checkbox-group v-model:value="labs" :options="labOpts" />
           <div class="actions">
             <a-button type="primary" :loading="loading" @click="onSubmit">提交病历</a-button>
           </div>
@@ -357,6 +374,15 @@ function reset() {
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     border-color: #1890ff;
   }
+}
+
+.selection-card.active {
+  border-color: #ffa618;
+  box-shadow: 0 0 0 2px rgba(255, 174, 24, 0.2), 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.selection-card.active .card-icon.bg-blue {
+  background: linear-gradient(135deg, #ffb640, #ffd569);
 }
 
 .card-icon {

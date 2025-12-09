@@ -71,7 +71,15 @@ const refreshInventory = async () => {
 
 const refreshPrescriptions = async () => {
   try {
-    const res = await getPrescriptions()
+    const m = currentMenu.value || ''
+    const s = m === 'prescriptions_pending'
+      ? 'pending'
+      : m === 'prescriptions_approved'
+      ? 'approved'
+      : m === 'prescriptions_dispensed'
+      ? 'dispensed'
+      : 'all'
+    const res = await getPrescriptions(s)
     if (res.code === 200) prescriptions.value = res.data
   } catch { /* ignore */ }
 }
@@ -114,9 +122,9 @@ async function onUpdatePrescriptionStatus(id, status) {
   try {
     const res = await updatePrescriptionStatus(id, status)
     if (res.code === 200) {
+      prescriptions.value = prescriptions.value.map(x => x.id === id ? { ...x, status } : x)
       message.success('处方状态已更新')
-      const p = prescriptions.value.find(x => x.id === id)
-      if (p) p.status = status
+      refreshPrescriptions()
       return true
     } else {
       message.error(res.message || '更新失败')

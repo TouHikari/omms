@@ -34,7 +34,11 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://omms.touhikari.top",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -92,5 +96,6 @@ app.openapi_tags = [
     {"name": "departments", "description": "科室管理接口"},
     {"name": "doctors", "description": "医生管理接口"},
     {"name": "schedules", "description": "排班查询接口"},
+    {"name": "pharmacy", "description": "药品与库存管理接口"},
 ]
 app.include_router(get_api_router(), prefix="/api")
