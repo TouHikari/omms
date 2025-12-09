@@ -2,14 +2,15 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { imagingOptions, labOptions } from '@/api/mockData'
-import { getRecordTemplates, createRecordTemplate, updateRecordTemplate, deleteRecordTemplate } from '@/api/record'
+import { getRecordTemplates, createRecordTemplate, updateRecordTemplate, deleteRecordTemplate, getRecordDictionaries } from '@/api/record'
 
 const route = useRoute()
 const router = useRouter()
 
 const templates = ref([])
 const loading = ref(false)
+const imagingOpts = ref([])
+const labOpts = ref([])
 const currentMenu = computed(() => route.query.menu ? route.query.menu.toString() : 'templates_list')
 const isCreateView = computed(() => currentMenu.value === 'templates_create')
 const previewVisible = ref(false)
@@ -24,6 +25,11 @@ async function loadTemplates() {
   try {
     const res = await getRecordTemplates()
     if (res.code === 200) templates.value = res.data
+    const dict = await getRecordDictionaries()
+    if (dict.code === 200) {
+      imagingOpts.value = (dict.data.imaging || []).map(v => ({ label: String(v), value: String(v) }))
+      labOpts.value = (dict.data.labs || []).map(v => ({ label: String(v), value: String(v) }))
+    }
   } catch {
     message.error('加载模板失败')
   } finally {
@@ -168,10 +174,10 @@ async function submitCreate() {
             </div>
           </a-form-item>
           <a-form-item label="默认检查申请">
-            <a-checkbox-group v-model:value="editForm.defaults.imaging" :options="imagingOptions" />
+            <a-checkbox-group v-model:value="editForm.defaults.imaging" :options="imagingOpts" />
           </a-form-item>
           <a-form-item label="默认检验申请">
-            <a-checkbox-group v-model:value="editForm.defaults.labs" :options="labOptions" />
+            <a-checkbox-group v-model:value="editForm.defaults.labs" :options="labOpts" />
           </a-form-item>
         </a-form>
       </a-modal>
@@ -234,10 +240,10 @@ async function submitCreate() {
             </div>
           </a-form-item>
           <a-form-item label="默认检查申请">
-            <a-checkbox-group v-model:value="createForm.defaults.imaging" :options="imagingOptions" />
+            <a-checkbox-group v-model:value="createForm.defaults.imaging" :options="imagingOpts" />
           </a-form-item>
           <a-form-item label="默认检验申请">
-            <a-checkbox-group v-model:value="createForm.defaults.labs" :options="labOptions" />
+            <a-checkbox-group v-model:value="createForm.defaults.labs" :options="labOpts" />
           </a-form-item>
           <a-form-item>
             <a-space>

@@ -4,8 +4,7 @@ import { message } from 'ant-design-vue'
 import { FileTextOutlined, SolutionOutlined, MedicineBoxOutlined, PictureOutlined, ExperimentOutlined, LeftOutlined } from '@ant-design/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getDepartments, getDoctorsByDept } from '@/api/appointment'
-import { imagingOptions, labOptions } from '@/api/mockData'
-import { createRecord, getRecordTemplateById, getRecordTemplates } from '@/api/record'
+import { createRecord, getRecordTemplateById, getRecordTemplates, getRecordDictionaries } from '@/api/record'
 
 const router = useRouter()
 const route = useRoute()
@@ -32,6 +31,8 @@ const diagnosis = ref('')
 const prescriptions = ref([])
 const imaging = ref([])
 const labs = ref([])
+const imagingOpts = ref([])
+const labOpts = ref([])
 const recordResult = ref(null)
 const pendingTemplateDefaults = ref(null)
 
@@ -65,6 +66,17 @@ onMounted(async () => {
   try {
     const res = await getRecordTemplates()
     if (res.code === 200) templatesList.value = res.data
+    const dict = await getRecordDictionaries()
+    if (dict.code === 200) {
+      const imgSet = new Set((dict.data.imaging || []).map(v => String(v)))
+      const labSet = new Set((dict.data.labs || []).map(v => String(v)))
+      (templatesList.value || []).forEach(t => {
+        ;(Array.isArray(t?.defaults?.imaging) ? t.defaults.imaging : []).forEach(v => imgSet.add(String(v)))
+        ;(Array.isArray(t?.defaults?.labs) ? t.defaults.labs : []).forEach(v => labSet.add(String(v)))
+      })
+      imagingOpts.value = Array.from(imgSet).map(v => ({ label: v, value: v }))
+      labOpts.value = Array.from(labSet).map(v => ({ label: v, value: v }))
+    }
   } catch {
     message.error('加载模板列表失败')
   }
@@ -79,6 +91,12 @@ async function applyTemplateFromRoute() {
       const d = res.data?.defaults || {}
       selectedTemplateId.value = Number(res.data.id)
       pendingTemplateDefaults.value = d
+      const imgSet = new Set(imagingOpts.value.map(i => i.value))
+      ;(Array.isArray(d.imaging) ? d.imaging : []).forEach(v => imgSet.add(v))
+      imagingOpts.value = Array.from(imgSet).map(v => ({ label: v, value: v }))
+      const labSet = new Set(labOpts.value.map(i => i.value))
+      ;(Array.isArray(d.labs) ? d.labs : []).forEach(v => labSet.add(v))
+      labOpts.value = Array.from(labSet).map(v => ({ label: v, value: v }))
       message.success(`已选择模板：${res.data.name}`)
     }
   } catch {
@@ -104,6 +122,15 @@ function onSelectTemplate(id) {
   selectedTemplateId.value = id
   const tpl = templatesList.value.find(t => t.id === id)
   pendingTemplateDefaults.value = tpl?.defaults || null
+  if (tpl?.defaults) {
+    const d = tpl.defaults
+    const imgSet = new Set(imagingOpts.value.map(i => i.value))
+    ;(Array.isArray(d.imaging) ? d.imaging : []).forEach(v => imgSet.add(v))
+    imagingOpts.value = Array.from(imgSet).map(v => ({ label: v, value: v }))
+    const labSet = new Set(labOpts.value.map(i => i.value))
+    ;(Array.isArray(d.labs) ? d.labs : []).forEach(v => labSet.add(v))
+    labOpts.value = Array.from(labSet).map(v => ({ label: v, value: v }))
+  }
   if (tpl) message.success(`已选择模板：${tpl.name}`)
 }
 
@@ -232,7 +259,7 @@ function reset() {
       <div v-if="currentStep === 0">
         <a-spin :spinning="loading">
           <div class="grid-container">
-            <a-card v-for="dept in deptList" :key="dept.id" hoverable class="selection-card" @click="onSelectDept(dept)">
+            <a-card v-for="dept in deptList" :key="dept.id" hoverable :class="['selection-card', { active: selectedDept && selectedDept.id === dept.id }]" @click="onSelectDept(dept)">
               <template #cover>
                 <div class="card-icon bg-blue">
                   <SolutionOutlined />
@@ -296,7 +323,7 @@ function reset() {
             <a-button @click="prevStep" type="text"><LeftOutlined /> 返回</a-button>
             <span class="step-title">检查申请</span>
           </div>
-          <a-checkbox-group v-model:value="imaging" :options="imagingOptions" />
+          <a-checkbox-group v-model:value="imaging" :options="imagingOpts" />
           <div class="actions">
             <a-button type="primary" @click="nextStep">下一步</a-button>
           </div>
@@ -307,7 +334,7 @@ function reset() {
             <a-button @click="prevStep" type="text"><LeftOutlined /> 返回</a-button>
             <span class="step-title">检验申请</span>
           </div>
-          <a-checkbox-group v-model:value="labs" :options="labOptions" />
+          <a-checkbox-group v-model:value="labs" :options="labOpts" />
           <div class="actions">
             <a-button type="primary" :loading="loading" @click="onSubmit">提交病历</a-button>
           </div>
@@ -357,6 +384,15 @@ function reset() {
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     border-color: #1890ff;
   }
+}
+
+.selection-card.active {
+  border-color: #ffa618;
+  box-shadow: 0 0 0 2px rgba(255, 174, 24, 0.2), 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.selection-card.active .card-icon.bg-blue {
+  background: linear-gradient(135deg, #ffb640, #ffd569);
 }
 
 .card-icon {

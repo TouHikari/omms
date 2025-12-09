@@ -2,8 +2,8 @@
 import { ref, computed, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import { useAuthStore } from '@/stores/auth'
-import { updateRecord } from '@/api/record'
-import { imagingOptions, labOptions, patientProfiles } from '@/api/mockData'
+import { updateRecord, getRecordDictionaries } from '@/api/record'
+import { patientProfiles } from '@/api/mockData'
 
 const props = defineProps({
   currentMenu: { type: String, required: true },
@@ -141,6 +141,21 @@ const canEditDraft = computed(() => ['admin', 'doctor', 'nurse'].includes(auth.r
 const editVisible = ref(false)
 const editRecord = ref(null)
 const editForm = ref({ chiefComplaint: '', diagnosis: '', prescriptions: [], labs: [], imaging: [] })
+const imagingOpts = ref([])
+const labOpts = ref([])
+
+;(async () => {
+  try {
+    const dict = await getRecordDictionaries()
+    if (dict.code === 200) {
+      imagingOpts.value = (dict.data.imaging || []).map(v => ({ label: String(v), value: String(v) }))
+      labOpts.value = (dict.data.labs || []).map(v => ({ label: String(v), value: String(v) }))
+    }
+  } catch {
+    imagingOpts.value = []
+    labOpts.value = []
+  }
+})()
 
 function openEdit(record) {
   editRecord.value = record
@@ -302,10 +317,10 @@ async function submitEdit() {
         </div>
       </a-form-item>
       <a-form-item label="检查申请">
-        <a-checkbox-group v-model:value="editForm.imaging" :options="imagingOptions" />
+        <a-checkbox-group v-model:value="editForm.imaging" :options="imagingOpts" />
       </a-form-item>
       <a-form-item label="检验申请">
-        <a-checkbox-group v-model:value="editForm.labs" :options="labOptions" />
+        <a-checkbox-group v-model:value="editForm.labs" :options="labOpts" />
       </a-form-item>
     </a-form>
   </a-modal>

@@ -115,3 +115,24 @@ export const deleteRecordTemplate = async (id) => {
   const json = await res.json()
   return json
 }
+
+export const getRecordDictionaries = async () => {
+  const res = await fetch(`${API_BASE_URL}/records/dictionaries`, { headers: { 'Content-Type': 'application/json', ...authHeaders() } })
+  const json = await res.json()
+  const data = json.data || { imaging: [], labs: [] }
+  return { code: json.code, data, message: json.message }
+}
+
+export const getRecordDictionaryImaging = async () => {
+  const res = await fetch(`${API_BASE_URL}/records/dictionaries/imaging`, { headers: { 'Content-Type': 'application/json', ...authHeaders() } })
+  const json = await res.json()
+  const list = json.data || []
+  return { code: json.code, data: list, message: json.message }
+}
+
+export const getRecordDictionaryLabs = async () => {
+  const res = await fetch(`${API_BASE_URL}/records/dictionaries/labs`, { headers: { 'Content-Type': 'application/json', ...authHeaders() } })
+  const json = await res.json()
+  const list = json.data || []
+  return { code: json.code, data: list, message: json.message }
+}
