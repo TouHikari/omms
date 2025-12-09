@@ -7,8 +7,10 @@ import AppointmentsList from '@/components/Appointments/AppointmentsList.vue'
 import AppointmentsCreate from '@/components/Appointments/AppointmentsCreate.vue'
 import AppointmentsSchedules from '@/components/Appointments/AppointmentsSchedules.vue'
 import PageLayout from '@/layouts/PageLayout.vue'
+import { useAuthStore } from '@/stores/auth'
 import { getDepartments, getAllDoctors, getAppointments, updateAppointmentStatus } from '@/api/appointment'
 
+const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -34,7 +36,15 @@ const loadData = async () => {
 
     if (deptRes.code === 200) departments.value = deptRes.data
     if (docRes.code === 200) doctors.value = docRes.data
-    if (apptRes.code === 200) appointments.value = apptRes.data
+    if (apptRes.code === 200) {
+      const all = apptRes.data
+      if (auth.role === 'patient') {
+        const myName = auth.user?.name || auth.user?.username
+        appointments.value = all.filter(a => a.patientName === myName)
+      } else {
+        appointments.value = all
+      }
+    }
   } catch (error) {
     console.error(error)
     message.error('加载数据失败')
@@ -51,7 +61,13 @@ const refreshAppointments = async () => {
   try {
     const apptRes = await getAppointments()
     if (apptRes.code === 200) {
-      appointments.value = apptRes.data
+      const all = apptRes.data
+      if (auth.role === 'patient') {
+        const myName = auth.user?.name || auth.user?.username
+        appointments.value = all.filter(a => a.patientName === myName)
+      } else {
+        appointments.value = all
+      }
     }
   } catch {
     // ignore
@@ -94,11 +110,16 @@ async function updateStatus(id, status) {
 }
 
 
-const pagePanels = [
-  { key: 'list', header: '预约列表' },
-  { key: 'create', header: '新建预约' },
-  { key: 'schedules', header: '医生排班' },
-]
+const pagePanels = computed(() => {
+  const panels = [{ key: 'list', header: '预约列表' }]
+  if (['admin', 'nurse', 'patient'].includes(auth.role)) {
+    panels.push({ key: 'create', header: '新建预约' })
+  }
+  if (['admin', 'doctor'].includes(auth.role)) {
+    panels.push({ key: 'schedules', header: '医生排班' })
+  }
+  return panels
+})
 
 const panelMenuMap = { list: 'list_all', create: 'create', schedules: 'schedules_roster' }
 
