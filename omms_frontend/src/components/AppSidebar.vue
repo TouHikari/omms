@@ -17,6 +17,7 @@
 <script setup>
 import { reactive, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 function getItem(label, key, icon, children, type) {
   return {
@@ -29,6 +30,7 @@ function getItem(label, key, icon, children, type) {
 }
 const route = useRoute()
 const router = useRouter()
+const auth = useAuthStore()
 
 const state = reactive({
   rootSubmenuKeys: [],
@@ -38,8 +40,13 @@ const state = reactive({
 
 const items = computed(() => {
   const sidebar = route.meta?.sidebar || []
-  const groups = sidebar.map(g => {
-    const children = (g.children || []).filter(c => !c.hidden).map(c => getItem(c.label, c.key))
+  const role = auth.role
+  const groups = sidebar
+    .filter(g => !g.roles || g.roles.includes(role))
+    .map(g => {
+    const children = (g.children || [])
+      .filter(c => !c.hidden && (!c.roles || c.roles.includes(role)))
+      .map(c => getItem(c.label, c.key))
     if (!children.length) {
       const navKey = g.navKey || g.key
       return getItem(g.label, navKey)
@@ -57,8 +64,21 @@ watch(rootSubmenuKeys, (keys) => {
 
 function syncOpen() {
   const selected = route.query.menu ? route.query.menu.toString() : ''
-  state.selectedKeys = selected ? [selected] : []
-  const parent = items.value.find(g => (g.children || []).some(c => c.key === selected))
+  const childKeys = items.value.flatMap(g => g.children || []).map(c => c.key)
+  let nextSelected = selected && childKeys.includes(selected) ? selected : ''
+  if (!nextSelected) {
+    const firstGroup = items.value.find(g => (g.children || []).length > 0)
+    const firstChild = firstGroup?.children?.[0]?.key
+    const fallback = firstChild || items.value[0]?.key || ''
+    if (fallback) {
+      nextSelected = fallback
+      if (nextSelected !== selected) {
+        router.replace({ path: route.path, query: { ...route.query, menu: nextSelected } })
+      }
+    }
+  }
+  state.selectedKeys = nextSelected ? [nextSelected] : []
+  const parent = items.value.find(g => (g.children || []).some(c => c.key === nextSelected))
   const validGroupKeys = items.value.map(g => g.key)
   const current = (state.openKeys || []).filter(k => validGroupKeys.includes(k))
   if (parent && !current.includes(parent.key)) current.push(parent.key)

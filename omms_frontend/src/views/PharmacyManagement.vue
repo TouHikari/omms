@@ -7,8 +7,10 @@ import PageLayout from '@/layouts/PageLayout.vue'
 import InventoryPanel from '@/components/Pharmacy/InventoryPanel.vue'
 import PrescriptionsPanel from '@/components/Pharmacy/PrescriptionsPanel.vue'
 import SuppliersPanel from '@/components/Pharmacy/SuppliersPanel.vue'
+import { useAuthStore } from '@/stores/auth'
 import { getMedicines, getInventoryBatches, getInventoryLogs, getPrescriptions, updatePrescriptionStatus, getSuppliers, getSupplierOrders } from '@/api/pharmacy'
 
+const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -80,7 +82,15 @@ const refreshPrescriptions = async () => {
       ? 'dispensed'
       : 'all'
     const res = await getPrescriptions(s)
-    if (res.code === 200) prescriptions.value = res.data
+    if (res.code === 200) {
+      const all = res.data
+      if (auth.role === 'patient') {
+        const myName = auth.user?.name || auth.user?.username
+        prescriptions.value = all.filter(p => p.patientName === myName)
+      } else {
+        prescriptions.value = all
+      }
+    }
   } catch { /* ignore */ }
 }
 
@@ -140,11 +150,17 @@ function onSupplierCreated() {
   refreshSuppliers()
 }
 
-const pagePanels = [
-  { key: 'inventory', header: '库存' },
-  { key: 'prescriptions', header: '处方' },
-  { key: 'suppliers', header: '供应商' },
-]
+const pagePanels = computed(() => {
+  const panels = []
+  if (['admin', 'nurse'].includes(auth.role)) {
+    panels.push({ key: 'inventory', header: '库存' })
+  }
+  panels.push({ key: 'prescriptions', header: '处方' })
+  if (['admin'].includes(auth.role)) {
+    panels.push({ key: 'suppliers', header: '供应商' })
+  }
+  return panels
+})
 
 const panelMenuMap = { inventory: 'inventory_drugs', prescriptions: 'prescriptions_list', suppliers: 'suppliers_list' }
 
@@ -153,7 +169,7 @@ const panelMenuMap = { inventory: 'inventory_drugs', prescriptions: 'prescriptio
 <template>
   <PageLayout title="药品与库存" desc="药品列表、库存批次、处方与供应商" :panels="pagePanels" :menu-map="panelMenuMap">
     <template #metrics>
-      <div class="metrics-grid">
+      <div class="metrics-grid" v-if="auth.role !== 'patient'">
         <a-card class="metric-card metric-inventory" :bordered="false" @click="setMenu('inventory_drugs')">
           <div class="metric">
             <div class="metric-icon-wrap">

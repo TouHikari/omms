@@ -1,5 +1,8 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 const props = defineProps({
   currentMenu: { type: String, required: true },
@@ -130,8 +133,8 @@ async function onUpdateStatus(record, status) {
               <a-button type="link">更改状态</a-button>
               <template #overlay>
                 <a-menu>
-                  <a-menu-item key="pending" @click="onUpdateStatus(record, 'pending')">置为待就诊</a-menu-item>
-                  <a-menu-item key="completed" @click="onUpdateStatus(record, 'completed')">置为已完成</a-menu-item>
+                  <a-menu-item key="pending" @click="onUpdateStatus(record, 'pending')" v-if="['admin', 'doctor', 'nurse'].includes(auth.role)">置为待就诊</a-menu-item>
+                  <a-menu-item key="completed" @click="onUpdateStatus(record, 'completed')" v-if="['admin', 'doctor', 'nurse'].includes(auth.role)">置为已完成</a-menu-item>
                   <a-menu-item key="cancelled">
                     <a-popconfirm title="确认取消该预约？" ok-text="确认" cancel-text="取消" @confirm="onUpdateStatus(record, 'cancelled')">
                       <span>置为已取消</span>

@@ -23,18 +23,21 @@ const router = createRouter({
       component: DashBoardPage,
       meta: {
         requiresAuth: true,
+        roles: ['admin', 'doctor', 'nurse'],
         title: '数据看板',
         sidebar: [
           {
             key: 'sub_ops',
             label: '运营中心',
+            roles: ['admin'],
             children: [
-              { key: 'view_overview', label: '实时概览' },
+              { key: 'view_overview', label: '运营概览' },
             ]
           },
           {
             key: 'sub_work',
             label: '工作台',
+            roles: ['doctor', 'nurse'],
             children: [
               { key: 'view_work', label: '事项处理' },
             ]
@@ -42,6 +45,7 @@ const router = createRouter({
           {
             key: 'sub_analysis',
             label: '数据洞察',
+            roles: ['admin'],
             children: [
               { key: 'view_analysis', label: '报表统计' },
             ]
@@ -55,11 +59,13 @@ const router = createRouter({
       component: AppointmentsManagement,
       meta: {
         requiresAuth: true,
+        roles: ['admin', 'doctor', 'nurse', 'patient'],
         title: '预约管理',
         sidebar: [
           {
             key: 'sub_list',
             label: '预约列表',
+            roles: ['admin', 'doctor', 'nurse', 'patient'],
             children: [
               { key: 'list_all', label: '全部预约' },
               { key: 'list_pending', label: '待就诊' },
@@ -71,11 +77,13 @@ const router = createRouter({
             key: 'sub_create',
             label: '新建预约',
             navKey: 'create',
+            roles: ['admin', 'nurse', 'patient'],
             children: [],
           },
           {
             key: 'sub_schedules',
             label: '医生排班',
+            roles: ['admin', 'doctor'],
             children: [
               { key: 'schedules_roster', label: '医生班表' },
             ],
@@ -89,15 +97,17 @@ const router = createRouter({
       component: RecordsManagement,
       meta: {
         requiresAuth: true,
+        roles: ['admin', 'doctor', 'nurse', 'patient'],
         title: '记录管理',
         sidebar: [
           {
             key: 'sub_list',
             label: '病历列表',
+            roles: ['admin', 'doctor', 'nurse', 'patient'],
             children: [
               { key: 'list_all', label: '全部病历' },
-              { key: 'list_by_patient', label: '按患者筛选' },
-              { key: 'list_by_doctor', label: '按医生筛选' },
+              { key: 'list_by_patient', label: '按患者筛选', roles: ['admin', 'doctor', 'nurse'] },
+              { key: 'list_by_doctor', label: '按医生筛选', roles: ['admin', 'doctor', 'nurse'] },
               { key: 'list_by_date', label: '按日期筛选' },
               { key: 'list_by_status', label: '按状态筛选' },
             ]
@@ -106,11 +116,13 @@ const router = createRouter({
             key: 'sub_create',
             label: '新建病历',
             navKey: 'create',
+            roles: ['admin', 'doctor'],
             children: []
           },
           {
             key: 'sub_templates',
             label: '模板管理',
+            roles: ['admin', 'doctor'],
             children: [
               { key: 'templates_list', label: '模板列表' },
               { key: 'templates_create', label: '新建模板' },
@@ -125,11 +137,13 @@ const router = createRouter({
       component: PharmacyManagement,
       meta: {
         requiresAuth: true,
+        roles: ['admin', 'doctor', 'nurse', 'patient'],
         title: '药房管理',
         sidebar: [
           {
             key: 'sub_inventory',
             label: '库存',
+            roles: ['admin', 'nurse'],
             children: [
               { key: 'inventory_drugs', label: '药品列表' },
               { key: 'inventory_batches', label: '库存批次' },
@@ -141,6 +155,7 @@ const router = createRouter({
           {
             key: 'sub_prescriptions',
             label: '处方',
+            roles: ['admin', 'doctor', 'nurse', 'patient'],
             children: [
               { key: 'prescriptions_list', label: '处方列表' },
               { key: 'prescriptions_pending', label: '待审核' },
@@ -151,6 +166,7 @@ const router = createRouter({
           {
             key: 'sub_suppliers',
             label: '供应商',
+            roles: ['admin'],
             children: [
               { key: 'suppliers_list', label: '供应商列表' },
               { key: 'suppliers_create', label: '新建供应商' },
@@ -245,11 +261,13 @@ const router = createRouter({
       component: ReportsManagement,
       meta: {
         requiresAuth: true,
+        roles: ['admin'],
         title: '报告管理',
         sidebar: [
           {
             key: 'sub_daily',
             label: '日报',
+            roles: ['admin'],
             children: [
               { key: 'daily_visits', label: '就诊日报' },
               { key: 'daily_drugs', label: '药品使用日报' },
@@ -259,6 +277,7 @@ const router = createRouter({
           {
             key: 'sub_monthly',
             label: '月报',
+            roles: ['admin'],
             children: [
               { key: 'monthly_visits', label: '就诊月报' },
               { key: 'monthly_drugs', label: '药品使用月报' },
@@ -268,6 +287,7 @@ const router = createRouter({
           {
             key: 'sub_custom',
             label: '自定义报表',
+            roles: ['admin'],
             children: [
               { key: 'custom_export', label: '导出自定义报表' },
             ]
@@ -320,6 +340,10 @@ router.beforeEach(async (to, from, next) => {
 
   const requiredRoles = to.meta?.roles
   if (requiredRoles && (!auth.role || !requiredRoles.includes(auth.role))) {
+    if (auth.role === 'patient') {
+      next('/appointments')
+      return
+    }
     next({ path: '/' })
     return
   }

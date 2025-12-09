@@ -13,13 +13,13 @@
       <template #overflowedIndicator>
         <EllipsisOutlined />
       </template>
-      <a-menu-item key="dashboard">数据看板</a-menu-item>
+      <a-menu-item key="dashboard" v-if="['admin','doctor','nurse'].includes(auth.role)">数据看板</a-menu-item>
       <a-menu-item key="appointments">预约管理</a-menu-item>
       <a-menu-item key="records">病历管理</a-menu-item>
       <a-menu-item key="pharmacy">药品与库存</a-menu-item>
       <!--<a-menu-item key="inpatient">住院管理</a-menu-item>-->
       <!--<a-menu-item key="payments">在线支付</a-menu-item>-->
-      <a-menu-item key="reports">报表统计</a-menu-item>
+      <a-menu-item key="reports" v-if="auth.role === 'admin'">报表统计</a-menu-item>
     </a-menu>
 
     <div class="actions">
@@ -68,13 +68,13 @@
 
   <a-drawer :open="mobileMenuOpen" placement="top" :height="440" @close="mobileMenuOpen = false" title="功能导航">
     <a-menu mode="inline" v-model:selectedKeys="selectedMenuKeys" @select="onMenuSelect">
-      <a-menu-item key="dashboard">数据看板</a-menu-item>
+      <a-menu-item key="dashboard" v-if="['admin','doctor','nurse'].includes(auth.role)">数据看板</a-menu-item>
       <a-menu-item key="appointments">预约管理</a-menu-item>
       <a-menu-item key="records">病历管理</a-menu-item>
       <a-menu-item key="pharmacy">药品与库存</a-menu-item>
       <!--<a-menu-item key="inpatient">住院管理</a-menu-item>-->
       <!--<a-menu-item key="payments">在线支付</a-menu-item>-->
-      <a-menu-item key="reports">报表统计</a-menu-item>
+      <a-menu-item key="reports" v-if="auth.role === 'admin'">报表统计</a-menu-item>
     </a-menu>
   </a-drawer>
 </template>
@@ -131,7 +131,7 @@ const keyToPath = {
 function onMenuSelect({ key }) {
   const path = keyToPath[key]
   const defaultMenuByKey = {
-    dashboard: 'overview_today',
+    dashboard: 'view_overview',
     appointments: 'list_all',
     records: 'list_all',
     pharmacy: 'inventory_drugs',

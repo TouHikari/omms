@@ -10,10 +10,12 @@ import {
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import PageLayout from '@/layouts/PageLayout.vue'
+import { useAuthStore } from '@/stores/auth'
 import { getDepartments, getAllDoctors, getAppointments } from '@/api/appointment'
 import { getMedicines, getInventoryLogs, getPrescriptions } from '@/api/pharmacy'
 import { getDailyVisits, getDailyDrugs, getMonthlyVisits, getMonthlyDrugs } from '@/api/report'
 
+const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -197,11 +199,19 @@ const doctorPerf = computed(() => {
 })
 
 // --- Navigation & Layout ---
-const pagePanels = [
-  { key: 'overview', header: '运营概览' },
-  { key: 'workbench', header: '工作台' },
-  { key: 'analysis', header: '数据分析' },
-]
+const pagePanels = computed(() => {
+  const panels = []
+  if (['admin'].includes(auth.role)) {
+    panels.push({ key: 'overview', header: '运营概览' })
+  }
+  if (['doctor', 'nurse'].includes(auth.role)) {
+    panels.push({ key: 'workbench', header: '工作台' })
+  }
+  if (['admin'].includes(auth.role)) {
+    panels.push({ key: 'analysis', header: '数据分析' })
+  }
+  return panels
+})
 
 // Mapping internal keys to query param 'menu' to keep Sidebar sync logic working
 // We map our panels to the most relevant Sidebar item
@@ -226,7 +236,7 @@ const setMenu = (menuKey) => {
     <!-- Top Metrics Area -->
     <template #metrics>
       <a-row :gutter="[16, 16]" class="metrics-row">
-        <a-col :xs="24" :sm="12" :xl="6">
+        <a-col :xs="24" :sm="12" :xl="6" v-if="['admin'].includes(auth.role)">
           <a-card class="metric-card primary" :bordered="false" @click="setMenu('view_overview')">
             <a-statistic :value="metrics.visits" suffix="人次">
               <template #title>
@@ -236,7 +246,7 @@ const setMenu = (menuKey) => {
           </a-card>
         </a-col>
 
-        <a-col :xs="24" :sm="12" :xl="6">
+        <a-col :xs="24" :sm="12" :xl="6" v-if="['admin','doctor','nurse'].includes(auth.role)">
           <a-card class="metric-card success" :bordered="false" @click="setMenu('view_work')">
             <a-statistic :value="metrics.pendingAppts" suffix="待办">
               <template #title>
@@ -246,7 +256,7 @@ const setMenu = (menuKey) => {
           </a-card>
         </a-col>
 
-        <a-col :xs="24" :sm="12" :xl="6">
+        <a-col :xs="24" :sm="12" :xl="6" v-if="['admin','nurse'].includes(auth.role)">
           <a-card class="metric-card warning" :bordered="false" @click="setMenu('view_work')">
             <a-statistic :value="metrics.lowStock" suffix="项">
               <template #title>
@@ -256,7 +266,7 @@ const setMenu = (menuKey) => {
           </a-card>
         </a-col>
 
-        <a-col :xs="24" :sm="12" :xl="6">
+        <a-col :xs="24" :sm="12" :xl="6" v-if="['admin','doctor'].includes(auth.role)">
           <a-card class="metric-card info" :bordered="false" @click="setMenu('view_work')">
             <a-statistic :value="metrics.pendingRx" suffix="单">
               <template #title>

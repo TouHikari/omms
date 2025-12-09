@@ -246,8 +246,8 @@ async function submitEdit() {
         <span style="margin-bottom: 4px">筛选方式：</span>
         <a-radio-group v-model:value="modeFilter" button-style="solid">
           <a-radio-button value="all">全部</a-radio-button>
-          <a-radio-button value="by_patient">按患者</a-radio-button>
-          <a-radio-button value="by_doctor">按医生</a-radio-button>
+          <a-radio-button value="by_patient" v-if="auth.role !== 'patient'">按患者</a-radio-button>
+          <a-radio-button value="by_doctor" v-if="auth.role !== 'patient'">按医生</a-radio-button>
           <a-radio-button value="by_date">按日期</a-radio-button>
           <a-radio-button value="by_status">按状态</a-radio-button>
         </a-radio-group>

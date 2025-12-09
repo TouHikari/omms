@@ -7,9 +7,11 @@ import RecordsList from '@/components/Records/RecordsList.vue'
 import RecordsCreate from '@/components/Records/RecordsCreate.vue'
 import RecordsTemplates from '@/components/Records/RecordsTemplates.vue'
 import PageLayout from '@/layouts/PageLayout.vue'
+import { useAuthStore } from '@/stores/auth'
 import { getDepartments, getAllDoctors } from '@/api/appointment'
 import { getRecords, updateRecordStatus } from '@/api/record'
 
+const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -35,7 +37,15 @@ const loadData = async () => {
 
     if (deptRes.code === 200) departments.value = deptRes.data
     if (docRes.code === 200) doctors.value = docRes.data
-    if (recRes.code === 200) records.value = recRes.data
+    if (recRes.code === 200) {
+      const all = recRes.data
+      if (auth.role === 'patient') {
+        const myName = auth.user?.name || auth.user?.username
+        records.value = all.filter(r => r.patientName === myName)
+      } else {
+        records.value = all
+      }
+    }
   } catch (error) {
     console.error(error)
     message.error('加载数据失败')
@@ -52,7 +62,13 @@ const refreshRecords = async () => {
   try {
     const recRes = await getRecords()
     if (recRes.code === 200) {
-      records.value = recRes.data
+      const all = recRes.data
+      if (auth.role === 'patient') {
+        const myName = auth.user?.name || auth.user?.username
+        records.value = all.filter(r => r.patientName === myName)
+      } else {
+        records.value = all
+      }
     }
   } catch {
     return
@@ -97,11 +113,14 @@ async function updateStatus(id, status) {
   }
 }
 
-const pagePanels = [
-  { key: 'list', header: '病历列表' },
-  { key: 'create', header: '新建病历' },
-  { key: 'templates', header: '模板管理' },
-]
+const pagePanels = computed(() => {
+  const panels = [{ key: 'list', header: '病历列表' }]
+  if (['admin', 'doctor'].includes(auth.role)) {
+    panels.push({ key: 'create', header: '新建病历' })
+    panels.push({ key: 'templates', header: '模板管理' })
+  }
+  return panels
+})
 
 const panelMenuMap = { list: 'list_all', create: 'create', templates: 'templates_list' }
 
