@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { getCustomReportRows } from '@/api/report'
 
 const props = defineProps({
   currentMenu: { type: String, required: true },
@@ -25,29 +26,26 @@ const fieldOptions = [
   { label: '状态', value: 'status' },
   { label: '药品项数', value: 'drugItems' },
 ]
-const selectedFields = ref(['patient', 'department', 'doctor', 'time'])
+const selectedFields = ref(['patient', 'department', 'doctor', 'time', 'status'])
 
-const previewRows = ref([
-  { patient: '张三', department: '内科', doctor: '王医生', time: '2025-12-09 09:35', status: 'completed', drugItems: 2 },
-  { patient: '李四', department: '儿科', doctor: '李医生', time: '2025-12-09 10:20', status: 'pending', drugItems: 1 },
-  { patient: '王五', department: '外科', doctor: '赵医生', time: '2025-12-08 14:00', status: 'completed', drugItems: 3 },
-])
+const rows = ref([])
 
-const filtered = computed(() => {
-  let rows = previewRows.value
-  if (filterDept.value) rows = rows.filter(r => r.department === filterDept.value)
-  if (filterDoctor.value) rows = rows.filter(r => r.doctor === filterDoctor.value)
-  const [start, end] = dateRange.value || []
-  if (start && end) {
-    const s = start?.toDate?.() ? start.toDate().getTime() : 0
-    const e = end?.toDate?.() ? end.toDate().getTime() : Number.MAX_SAFE_INTEGER
-    rows = rows.filter(r => {
-      const t = new Date(r.time.replace(' ', 'T')).getTime()
-      return t >= s && t <= e
-    })
+function toDateStr(d) {
+  if (!d) return null
+  if (typeof d === 'string') return d.slice(0, 10)
+  return d?.format?.('YYYY-MM-DD') || null
+}
+
+async function fetchRows() {
+  const start = toDateStr((dateRange.value || [])[0])
+  const end = toDateStr((dateRange.value || [])[1])
+  const { code, data, message: msg } = await getCustomReportRows({ deptName: filterDept.value, doctorName: filterDoctor.value, dateRange: start && end ? [start, end] : null })
+  if (code !== 200) {
+    message.error(msg || '获取报表数据失败')
+    return
   }
-  return rows
-})
+  rows.value = data || []
+}
 
 function buildColumns() {
   return selectedFields.value.map(f => ({ title: fieldOptions.find(x => x.value === f)?.label || f, dataIndex: f, key: f }))
@@ -70,7 +68,7 @@ function onExport() {
       message.warning('请至少选择一个字段')
       return
     }
-    const csv = buildCSV(filtered.value, cols)
+    const csv = buildCSV(rows.value, cols)
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -86,7 +84,11 @@ function onExport() {
   }
 }
 
-watch(() => props.currentMenu, () => {})
+watch(() => props.currentMenu, (val) => { if (val === 'custom_export') fetchRows() })
+watch(filterDept, fetchRows)
+watch(filterDoctor, fetchRows)
+watch(dateRange, fetchRows)
+onMounted(() => fetchRows())
 
 </script>
 
@@ -110,7 +112,7 @@ watch(() => props.currentMenu, () => {})
           <span style="margin-right: 12px">选择字段：</span>
           <a-checkbox-group v-model:value="selectedFields" :options="fieldOptions" />
         </div>
-        <a-table :columns="buildColumns()" :data-source="filtered" row-key="time" :pagination="{ pageSize: 8 }" />
+        <a-table :columns="buildColumns()" :data-source="rows" row-key="id" :pagination="{ pageSize: 8 }" />
         <div style="display: flex; justify-content: flex-end">
           <a-button type="primary" @click="onExport">导出 CSV</a-button>
         </div>
