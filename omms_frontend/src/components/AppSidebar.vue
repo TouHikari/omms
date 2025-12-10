@@ -64,8 +64,23 @@ watch(rootSubmenuKeys, (keys) => {
 
 function syncOpen() {
   const selected = route.query.menu ? route.query.menu.toString() : ''
-  const childKeys = items.value.flatMap(g => g.children || []).map(c => c.key)
-  let nextSelected = selected && childKeys.includes(selected) ? selected : ''
+  const allKeys = []
+  items.value.forEach(g => {
+    if (g.children && g.children.length) {
+      g.children.forEach(c => allKeys.push(c.key))
+    } else {
+      allKeys.push(g.key)
+    }
+  })
+
+  let nextSelected = selected && allKeys.includes(selected) ? selected : ''
+  
+  if (selected === 'none') {
+    state.selectedKeys = []
+    state.openKeys = []
+    return
+  }
+
   if (!nextSelected) {
     const firstGroup = items.value.find(g => (g.children || []).length > 0)
     const firstChild = firstGroup?.children?.[0]?.key
