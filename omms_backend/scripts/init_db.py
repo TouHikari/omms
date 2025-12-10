@@ -358,13 +358,35 @@ async def seed_app_tables(
             return int(res2.first()[0])
 
         admin_uid = await upsert_user("admin@omms", "admin123", "admin@omms", "系统管理员", 1)
-        # doctor
+
+        doctor_objs: list[Doctor] = []
+
+        # Explicitly create doctor001 (frontend preset)
+        doc001_uid = await upsert_user("doctor001", "omms123", "doctor001@omms", "张医生", 2)
+        res_doc001 = await session.execute(text("SELECT doctor_id FROM doctors WHERE user_id=:uid"), {"uid": doc001_uid})
+        if not res_doc001.first():
+             # Pick a department for doctor001, e.g., 内科 (Internal Medicine) which is usually the first one
+            dept_internal = next((d for d in dept_objs if d.dept_name == "内科"), dept_objs[0])
+            doc001 = Doctor(
+                user_id=doc001_uid,
+                doctor_name="张医生",
+                dept_id=dept_internal.dept_id,
+                title="主任医师",
+                specialty="综合内科",
+                available_status=1,
+                created_at=now_dt,
+                updated_at=now_dt,
+            )
+            session.add(doc001)
+            await session.commit()
+            doctor_objs.append(doc001) # Add to list so schedules are generated for him too
+
+        # doctor loop
         surnames = ["赵","钱","孙","李","周","吴","郑","王","冯","陈","褚","卫","蒋","沈","韩","杨","朱","秦","尤","许","何","吕","施","张","孔","曹","严","华","金","魏","陶","姜","戚","谢","邹","喻","柏","水","窦","章","云","苏","潘","葛","奚","范","彭","郎","鲁","韦"]
         given = ["伟","芳","娜","敏","静","强","磊","军","洋","勇","艳","杰","娟","涛","明","超","刚","玲","佳","丹","龙","博","涵","哲","晨","瑞","坤","宁","婷","露","婧","斌","浩","凯","倩","萌","璐","文","雪","璟","昕","昊","奕","璇","梓","可"]
         used_names: set[str] = set()
 
         doc_users: list[int] = []
-        doctor_objs: list[Doctor] = []
         for di, dept in enumerate(dept_objs, start=1):
             cnt = random.randint(2, 3)
             for k in range(1, cnt + 1):
@@ -426,6 +448,24 @@ async def seed_app_tables(
         # patient
         base_patients = max(seed_count * 2, 40)
         patient_objs: list[Patient] = []
+
+        # Explicitly create patient001 (frontend preset)
+        pat001_uid = await upsert_user("patient001", "omms123", "patient001@omms", "王小明", 3)
+        res_pat001 = await session.execute(text("SELECT patient_id FROM patients WHERE user_id=:uid"), {"uid": pat001_uid})
+        if not res_pat001.first():
+            pat001 = Patient(
+                user_id=pat001_uid,
+                name="王小明",
+                gender=1,
+                birthday="1990-01-01",
+                id_card="110101199001010001",
+                created_at=now_dt,
+                updated_at=now_dt,
+            )
+            session.add(pat001)
+            await session.commit()
+            patient_objs.append(pat001)
+
         for i in range(1, base_patients + 1):
             uname = f"patient_{i:03d}"
             rname = None

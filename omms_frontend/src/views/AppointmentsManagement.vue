@@ -40,7 +40,7 @@ const loadData = async () => {
       const all = apptRes.data
       if (auth.role === 'patient') {
         const myName = auth.user?.name || auth.user?.username
-        appointments.value = all.filter(a => a.patientName === myName)
+        appointments.value = all.filter(a => a.patient === myName)
       } else {
         appointments.value = all
       }
@@ -64,7 +64,7 @@ const refreshAppointments = async () => {
       const all = apptRes.data
       if (auth.role === 'patient') {
         const myName = auth.user?.name || auth.user?.username
-        appointments.value = all.filter(a => a.patientName === myName)
+        appointments.value = all.filter(a => a.patient === myName)
       } else {
         appointments.value = all
       }

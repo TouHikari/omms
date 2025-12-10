@@ -260,7 +260,7 @@ async function submitEdit() {
         <a-select v-if="modeFilter === 'by_doctor'" v-model:value="doctorId" :options="doctorOptions" style="margin-left: 12px; width: 260px" placeholder="选择医生" />
         <a-range-picker v-if="modeFilter === 'by_date'" v-model:value="dateRange" style="margin-left: 12px" />
       </div>
-      <a-button type="primary" @click="setMenu('create')">新建病历</a-button>
+      <a-button v-if="auth.role !== 'patient'" type="primary" @click="setMenu('create')">新建病历</a-button>
     </a-space>
     <a-table
       :columns="columns"
