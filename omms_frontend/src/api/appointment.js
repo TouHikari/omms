@@ -68,11 +68,17 @@ export async function getDoctorSchedules(doctorId) {
   return { code: 200, data: toScheduleList(json.data), message: json.message || 'success' }
 }
 
-export async function getAppointments() {
-  const res = await fetch(`${API_BASE_URL}/appointments?page=1&pageSize=100`, { method: 'GET', headers: authHeaders() })
+export async function getAppointments(params = {}) {
+  const page = params.page ?? 1
+  const pageSize = params.pageSize ?? 20
+  const statusMap = { pending: 0, completed: 1, cancelled: 2 }
+  const qs = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+  if (params.status && params.status !== 'all') qs.set('status', String(statusMap[params.status] ?? params.status))
+  const res = await fetch(`${API_BASE_URL}/appointments?${qs.toString()}`, { method: 'GET', headers: authHeaders() })
   const json = await res.json()
   if (json.code !== 200) return { code: json.code || 500, message: json.message || 'failed' }
-  return { code: 200, data: toAppointmentsList(json.data), message: json.message || 'success' }
+  const list = toAppointmentsList(json.data)
+  return { code: 200, data: { list, total: json.data?.total ?? list.length, page: json.data?.page ?? page, pageSize: json.data?.pageSize ?? pageSize }, message: json.message || 'success' }
 }
 
 export async function updateAppointmentStatus(apptId, status) {

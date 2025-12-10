@@ -12,7 +12,10 @@ export const getRecords = async (params = {}) => {
   const res = await fetch(`${API_BASE_URL}/records?${qs.toString()}`, { headers: { 'Content-Type': 'application/json', ...authHeaders() } })
   const json = await res.json()
   const list = json.data?.list ?? []
-  return { code: json.code, data: list, message: json.message }
+  const total = json.data?.total ?? list.length
+  const p = json.data?.page ?? page
+  const ps = json.data?.pageSize ?? pageSize
+  return { code: json.code, data: { list, total, page: p, pageSize: ps }, message: json.message }
 }
 
 export const updateRecordStatus = async (id, status) => {

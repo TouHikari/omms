@@ -9,8 +9,10 @@ const props = defineProps({
   departments: { type: Array, required: true },
   doctors: { type: Array, required: true },
   appointments: { type: Array, required: true },
+  total: { type: Number, default: 0 },
   setMenu: { type: Function, required: true },
   updateStatus: { type: Function, required: true },
+  onPagination: { type: Function, required: true },
 })
 
 const columns = [
@@ -47,6 +49,7 @@ watch(statusFilter, (s) => {
 function onTableChange(pagination) {
   currentPage.value = pagination.current
   pageSize.value = pagination.pageSize
+  props.onPagination && props.onPagination({ current: currentPage.value, pageSize: pageSize.value })
 }
 
 const filteredAppointments = computed(() => {
@@ -114,7 +117,7 @@ async function onUpdateStatus(record, status) {
     <a-table
       :columns="columns"
       :data-source="filteredAppointments"
-      :pagination="{ current: currentPage, pageSize: pageSize, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'] }"
+      :pagination="{ current: currentPage, pageSize: pageSize, total: props.total, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'] }"
       :scroll="{ x: 860 }"
       size="small"
       rowKey="id"

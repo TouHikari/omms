@@ -24,6 +24,17 @@ const departments = ref([])
 const doctors = ref([])
 const appointments = ref([])
 const loading = ref(false)
+const apptTotal = ref(0)
+const apptPage = ref(1)
+const apptPageSize = ref(10)
+
+function statusFromMenu(menuKey) {
+  const m = String(menuKey || '')
+  if (m === 'list_pending') return 'pending'
+  if (m === 'list_completed') return 'completed'
+  if (m === 'list_cancelled') return 'cancelled'
+  return 'all'
+}
 
 const loadData = async () => {
   loading.value = true
@@ -31,19 +42,16 @@ const loadData = async () => {
     const [deptRes, docRes, apptRes] = await Promise.all([
       getDepartments(),
       getAllDoctors(),
-      getAppointments()
+      getAppointments({ page: apptPage.value, pageSize: apptPageSize.value, status: statusFromMenu(currentMenu.value) })
     ])
 
     if (deptRes.code === 200) departments.value = deptRes.data
     if (docRes.code === 200) doctors.value = docRes.data
     if (apptRes.code === 200) {
-      const all = apptRes.data
-      if (auth.role === 'patient') {
-        const myName = auth.user?.name || auth.user?.username
-        appointments.value = all.filter(a => a.patient === myName)
-      } else {
-        appointments.value = all
-      }
+      appointments.value = apptRes.data.list || []
+      apptTotal.value = apptRes.data.total || 0
+      apptPage.value = apptRes.data.page || apptPage.value
+      apptPageSize.value = apptRes.data.pageSize || apptPageSize.value
     }
   } catch (error) {
     console.error(error)
@@ -59,15 +67,12 @@ onMounted(() => {
 
 const refreshAppointments = async () => {
   try {
-    const apptRes = await getAppointments()
+    const apptRes = await getAppointments({ page: apptPage.value, pageSize: apptPageSize.value, status: statusFromMenu(currentMenu.value) })
     if (apptRes.code === 200) {
-      const all = apptRes.data
-      if (auth.role === 'patient') {
-        const myName = auth.user?.name || auth.user?.username
-        appointments.value = all.filter(a => a.patient === myName)
-      } else {
-        appointments.value = all
-      }
+      appointments.value = apptRes.data.list || []
+      apptTotal.value = apptRes.data.total || 0
+      apptPage.value = apptRes.data.page || apptPage.value
+      apptPageSize.value = apptRes.data.pageSize || apptPageSize.value
     }
   } catch {
     // ignore
@@ -79,6 +84,12 @@ watch(currentMenu, (m) => {
     refreshAppointments()
   }
 })
+
+function onAppointmentsPagination(pagination) {
+  apptPage.value = pagination?.current || 1
+  apptPageSize.value = pagination?.pageSize || apptPageSize.value
+  refreshAppointments()
+}
 
 const metrics = computed(() => {
   const todayStr = new Date().toISOString().split('T')[0]
@@ -181,7 +192,7 @@ const panelMenuMap = { list: 'list_all', create: 'create', schedules: 'schedules
 
     <template #panel-list>
       <AppointmentsList :current-menu="currentMenu" :departments="departments" :doctors="doctors"
-        :appointments="appointments" :set-menu="setMenu" :update-status="updateStatus" />
+        :appointments="appointments" :total="apptTotal" :set-menu="setMenu" :update-status="updateStatus" :on-pagination="onAppointmentsPagination" />
     </template>
 
     <template #panel-create>
