@@ -112,7 +112,7 @@ async function onUpdateStatus(record, status) {
           <a-radio-button value="cancelled">已取消</a-radio-button>
         </a-radio-group>
       </div>
-      <a-button type="primary" @click="setMenu('create')">新建预约</a-button>
+      <a-button v-if="role === 'patient' || role === 'admin'" type="primary" @click="setMenu('create')">新建预约</a-button>
     </a-space>
     <a-table
       :columns="columns"
