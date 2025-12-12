@@ -25,6 +25,9 @@ const departments = ref([])
 const doctors = ref([])
 const records = ref([])
 const loading = ref(false)
+const recTotal = ref(0)
+const recPage = ref(1)
+const recPageSize = ref(10)
 
 const loadData = async () => {
   loading.value = true
@@ -32,19 +35,16 @@ const loadData = async () => {
     const [deptRes, docRes, recRes] = await Promise.all([
       getDepartments(),
       getAllDoctors(),
-      getRecords()
+      getRecords({ page: recPage.value, pageSize: recPageSize.value })
     ])
 
     if (deptRes.code === 200) departments.value = deptRes.data
     if (docRes.code === 200) doctors.value = docRes.data
     if (recRes.code === 200) {
-      const all = recRes.data
-      if (auth.role === 'patient') {
-        const myName = auth.user?.name || auth.user?.username
-        records.value = all.filter(r => r.patientName === myName)
-      } else {
-        records.value = all
-      }
+      records.value = recRes.data.list || []
+      recTotal.value = recRes.data.total || 0
+      recPage.value = recRes.data.page || recPage.value
+      recPageSize.value = recRes.data.pageSize || recPageSize.value
     }
   } catch (error) {
     console.error(error)
@@ -60,15 +60,12 @@ onMounted(() => {
 
 const refreshRecords = async () => {
   try {
-    const recRes = await getRecords()
+    const recRes = await getRecords({ page: recPage.value, pageSize: recPageSize.value })
     if (recRes.code === 200) {
-      const all = recRes.data
-      if (auth.role === 'patient') {
-        const myName = auth.user?.name || auth.user?.username
-        records.value = all.filter(r => r.patientName === myName)
-      } else {
-        records.value = all
-      }
+      records.value = recRes.data.list || []
+      recTotal.value = recRes.data.total || 0
+      recPage.value = recRes.data.page || recPage.value
+      recPageSize.value = recRes.data.pageSize || recPageSize.value
     }
   } catch {
     return
@@ -84,6 +81,12 @@ watch(currentMenu, (m) => {
     refreshRecords()
   }
 })
+
+function onRecordsPagination(pagination) {
+  recPage.value = pagination?.current || 1
+  recPageSize.value = pagination?.pageSize || recPageSize.value
+  refreshRecords()
+}
 
 const metrics = computed(() => {
   const todayStr = new Date().toISOString().split('T')[0]
@@ -193,7 +196,7 @@ const panelMenuMap = { list: 'list_all', create: 'create', templates: 'templates
     </template>
 
     <template #panel-list>
-      <RecordsList :current-menu="currentMenu" :departments="departments" :doctors="doctors" :records="records" :set-menu="setMenu" :update-status="updateStatus" />
+      <RecordsList :current-menu="currentMenu" :departments="departments" :doctors="doctors" :records="records" :total="recTotal" :set-menu="setMenu" :update-status="updateStatus" :on-pagination="onRecordsPagination" />
     </template>
 
     <template #panel-create>

@@ -61,7 +61,7 @@ const loadBase = async () => {
     if (deptRes.code === 200) departments.value = deptRes.data
     if (docRes.code === 200) doctors.value = docRes.data
     if (medRes.code === 200) medicines.value = medRes.data
-    if (apptRes.code === 200) appointments.value = apptRes.data
+    if (apptRes.code === 200) appointments.value = apptRes.data?.list || []
     if (rxRes.code === 200) pendingPrescriptions.value = rxRes.data
   } catch (error) {
     console.error(error)

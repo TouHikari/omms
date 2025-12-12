@@ -35,6 +35,7 @@ async def list_appointments(
     page: int = Query(default=1, ge=1),
     pageSize: int = Query(default=20, ge=1, le=100),
     session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
     """查询预约列表"""
     # 计算分页偏移量
@@ -57,6 +58,13 @@ async def list_appointments(
         stmt = stmt.where(Appointment.doctor_id == doctorId)
     if status is not None:
         stmt = stmt.where(Appointment.status == status)
+
+    if current_user and current_user.role_id == 3:
+        pid_res = await session.execute(select(Patient.patient_id).where(Patient.user_id == current_user.user_id))
+        pid_row = pid_res.first()
+        if not pid_row:
+            return ok({"list": [], "total": 0, "page": page, "pageSize": pageSize})
+        stmt = stmt.where(Appointment.patient_id == int(pid_row[0]))
     
     # 查询总数
     total_stmt = select(func.count()).select_from(stmt.subquery())

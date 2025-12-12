@@ -9,8 +9,10 @@ const props = defineProps({
   departments: { type: Array, required: true },
   doctors: { type: Array, required: true },
   records: { type: Array, required: true },
+  total: { type: Number, default: 0 },
   setMenu: { type: Function, required: true },
   updateStatus: { type: Function, required: true },
+  onPagination: { type: Function, required: true },
 })
 
 const columns = [
@@ -71,6 +73,7 @@ watch(statusFilter, () => {
 function onTableChange(pagination) {
   currentPage.value = pagination.current
   pageSize.value = pagination.pageSize
+  props.onPagination && props.onPagination({ current: currentPage.value, pageSize: pageSize.value })
 }
 
 const doctorOptions = computed(() => (props.doctors || []).map(d => ({ label: `${d.name}（${d.title}）`, value: d.id })))
@@ -260,12 +263,12 @@ async function submitEdit() {
         <a-select v-if="modeFilter === 'by_doctor'" v-model:value="doctorId" :options="doctorOptions" style="margin-left: 12px; width: 260px" placeholder="选择医生" />
         <a-range-picker v-if="modeFilter === 'by_date'" v-model:value="dateRange" style="margin-left: 12px" />
       </div>
-      <a-button type="primary" @click="setMenu('create')">新建病历</a-button>
+      <a-button v-if="auth.role === 'admin' || auth.role === 'doctor'" type="primary" @click="setMenu('create')">新建病历</a-button>
     </a-space>
     <a-table
       :columns="columns"
       :data-source="filteredRecords"
-      :pagination="{ current: currentPage, pageSize: pageSize, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'] }"
+      :pagination="{ current: currentPage, pageSize: pageSize, total: props.total, showSizeChanger: true, pageSizeOptions: ['10', '20', '50'] }"
       :scroll="{ x: 860 }"
       size="small"
       rowKey="id"
